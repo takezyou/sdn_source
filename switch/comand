@@ -1,0 +1,8 @@
+curl -X GET http://10.50.0.100:8080/switch/mactable/0000000000000001 | python -mjson.tool
+curl -X GET http://10.50.0.100:8080/switch/mactable/0000000000000002 | python -mjson.tool
+curl -X GET http://10.50.0.100:8080/switch/mactable/0000000000000003 | python -mjson.tool
+
+curl -X PUT -d '{"mac" : "00:00:00:00:00:01", "port" : 1}' http://10.50.0.100:8080/switch/mactable/0000000000000001
+curl -X PUT -d '{"mac" : "00:00:00:00:00:03", "port" : 4}' http://10.50.0.100:8080/switch/mactable/0000000000000001
+curl -X PUT -d '{"mac" : "00:00:00:00:00:01", "port" : 4}' http://10.50.0.100:8080/switch/mactable/0000000000000002
+curl -X PUT -d '{"mac" : "00:00:00:00:00:03", "port" : 1}' http://10.50.0.100:8080/switch/mactable/0000000000000002

@@ -23,7 +23,6 @@ from ryu.lib.packet import ipv4
 from ryu.lib.packet import vlan
 from ryu.lib.packet import ethernet
 
-
 class Switch13(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
