@@ -1,6 +1,6 @@
 import json
 
-from ryu.app import simple_switch_13
+from ryu.app import switch_13
 from webob import Response
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER
@@ -12,20 +12,20 @@ simple_switch_instance_name = 'switch_api_app'
 url = '/switch/mactable/{dpid}'
 
 
-class SimpleSwitchRest13(switch_13.SimpleSwitch13):
+class SwitchRest13(switch_13.Switch13):
 
     _CONTEXTS = {'wsgi': WSGIApplication}
 
     def __init__(self, *args, **kwargs):
-        super(SimpleSwitchRest13, self).__init__(*args, **kwargs)
+        super(SwitchRest13, self).__init__(*args, **kwargs)
         self.switches = {}
         wsgi = kwargs['wsgi']
-        wsgi.register(SimpleSwitchController,
+        wsgi.register(SwitchController,
                       {simple_switch_instance_name: self})
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
-        super(SimpleSwitchRest13, self).switch_features_handler(ev)
+        super(SwitchRest13, self).switch_features_handler(ev)
         datapath = ev.msg.datapath
         self.switches[datapath.id] = datapath
         self.mac_to_port.setdefault(datapath.id, {})
@@ -57,13 +57,13 @@ class SimpleSwitchRest13(switch_13.SimpleSwitch13):
         return mac_table
 
 
-class SimpleSwitchController(ControllerBase):
+class SwitchController(ControllerBase):
 
     def __init__(self, req, link, data, **config):
-        super(SimpleSwitchController, self).__init__(req, link, data, **config)
+        super(SwitchController, self).__init__(req, link, data, **config)
         self.simple_switch_app = data[simple_switch_instance_name]
 
-    @route('simpleswitch', url, methods=['GET'],
+    @route('switch', url, methods=['GET'],
            requirements={'dpid': dpid_lib.DPID_PATTERN})
     def list_mac_table(self, req, **kwargs):
 
@@ -77,7 +77,7 @@ class SimpleSwitchController(ControllerBase):
         body = json.dumps(mac_table)
         return Response(content_type='application/json', body=body)
 
-    @route('simpleswitch', url, methods=['PUT'],
+    @route('switch', url, methods=['PUT'],
            requirements={'dpid': dpid_lib.DPID_PATTERN})
     def put_mac_table(self, req, **kwargs):
 

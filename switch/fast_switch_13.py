@@ -38,6 +38,57 @@ class Switch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+        dpid = datapath.id
+
+        # flow add s1
+        if dpid == 1:
+            # host1 host3
+            actions = [parser.OFPActionOutput(1)]
+            match = parser.OFPMatch(in_port=4, eth_dst="00:00:00:00:00:01")
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=1, eth_dst="00:00:00:00:00:03")
+
+            self.add_flow(datapath, 1, match, actions)
+
+            #host2 host4
+            actions = [parser.OFPActionOutput(2)]
+            match = parser.OFPMatch(in_port=4, eth_dst="00:00:00:00:00:02")
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=2, eth_dst="00:00:00:00:00:04")
+
+            self.add_flow(datapath, 1, match, actions)
+
+        # flow add s2
+        if  dpid == 2:
+            # host1 host3
+            actions = [parser.OFPActionOutput(1)]
+            match = parser.OFPMatch(in_port=4, eth_dst="00:00:00:00:00:03")
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=1, eth_dst="00:00:00:00:00:01")
+
+            self.add_flow(datapath, 1, match, actions)
+
+            #host2 host4
+            actions = [parser.OFPActionOutput(2)]
+            match = parser.OFPMatch(in_port=4, eth_dst="00:00:00:00:00:04")
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=2, eth_dst="00:00:00:00:00:02")
+
+            self.add_flow(datapath, 1, match, actions)
+
+
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
