@@ -38,6 +38,20 @@ class Switch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+        dpid = datapath.id
+
+        if dpid == 1:
+            actions = [parser.OFPActionOutput(1)]            # host1 host3
+
+            match = parser.OFPMatch(in_port=4,eth_dst="00:00:00:00:00:01")
+
+            self.del_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=1, eth_dst="00:00:00:00:00:03")
+
+            self.del_flow(datapath, 1, match, actions)
+
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -47,4 +61,14 @@ class Switch13(app_manager.RyuApp):
                                              actions)]
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
                                 match=match, instructions=inst)
+        datapath.send_msg(mod)
+
+    def del_flow(self, datapath, priority, match, actions):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+
+        # construct flow_mod message and send it.
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
+                                command=ofproto.OFPFC_DELETE_STRICT, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
         datapath.send_msg(mod)
