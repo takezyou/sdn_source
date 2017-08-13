@@ -36,6 +36,8 @@ class Switch13(app_manager.RyuApp):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
+        
+        print(parser)
 
         dpid = datapath.id
 

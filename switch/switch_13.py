@@ -38,20 +38,6 @@ class Switch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        dpid = datapath.id
-
-        if dpid == 1:
-            actions = [parser.OFPActionOutput(1)]            # host1 host3
-
-            match = parser.OFPMatch(in_port=4,eth_dst="00:00:00:00:00:01")
-
-            self.del_flow(datapath, 1, match, actions)
-
-            actions = [parser.OFPActionOutput(4)]
-            match = parser.OFPMatch(in_port=1, eth_dst="00:00:00:00:00:03")
-
-            self.del_flow(datapath, 1, match, actions)
-
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
