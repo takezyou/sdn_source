@@ -12,16 +12,32 @@ import peewee
 
 
 simple_switch_instance_name = 'switch_api_app'
-db = peewee.SqliteDatabase("/root/data.db")
+db1 = peewee.SqliteDatabase("/root/data1.db")
+db2 = peewee.SqliteDatabase("/root/data1.db")
 
-class Flow(peewee.Model):
-    in_port = peewee.IntegerField()
-    mac_address = peewee.TextField()
-    out_port = peewee.IntegerField()
+class Flow1(peewee.Model):
+    in_port1 = peewee.IntegerField()
+    mac_address1 = peewee.TextField()
+    out_port1 = peewee.IntegerField()
+    in_port2 = peewee.IntegerField()
+    mac_address2 = peewee.TextField()
+    out_port2 = peewee.IntegerField()
     datapath = peewee.TextField()
-    
+
     class Meta:
-        database = db
+        database = db1
+
+class Flow2(peewee.Model):
+    in_port1 = peewee.IntegerField()
+    mac_address1 = peewee.TextField()
+    out_port1 = peewee.IntegerField()
+    in_port2 = peewee.IntegerField()
+    mac_address2 = peewee.TextField()
+    out_port2 = peewee.IntegerField()
+    datapath = peewee.TextField()
+
+    class Meta:
+        database = db2
 
 class SwitchRest13(switch_13.Switch13):
 
@@ -58,16 +74,19 @@ class SwitchController(ControllerBase):
         super(SwitchController, self).__init__(req, link, data, **config)
         self.simple_switch_app = data[simple_switch_instance_name]
 
-    @route('switch', '/add/{in_port}', methods=['GET'])
+    @route('switch', '/add/{in_port1}', methods=['GET'])
     def add_mac_table(self, req, **kwargs):
 
         simple_switch = self.simple_switch_app
-        in_port = str_to_int(kwargs['in_port'])
+        in_port1 = str_to_int(kwargs['in_port1'])
 
-        flow = Flow.get(Flow.in_port == in_port)
-        dpid = dpid_lib.str_to_dpid(flow.datapath)
+        flow1 = Flow1.get(Flow1.in_port1 == in_port1)
+        flow2 = Flow1.get(Flow2.in_port1 == in_port1)
+        dpid1 = dpid_lib.str_to_dpid(flow1.datapath)
+        dpid2 = dpid_lib.str_to_dpid(flow2.datapath)
 
         if dpid not in simple_switch.mac_to_port:
             return Response(status=404)
 
-        return simple_switch.set_flow(dpid, flow.in_port, flow.mac_address, flow.out_port)
+        return simple_switch.set_flow(dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1,
+                                       dpid2, flow2.in_port1, flow2.mac_address1, flow2.out_port1)
