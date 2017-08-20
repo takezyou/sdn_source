@@ -10,62 +10,91 @@ CONFIG_DISPATCHER	../switch/switch_13.py	/^from ryu.controller.handler import CO
 ControllerBase	../switch/rest_13.py	/^from ryu.app.wsgi import ControllerBase, WSGIApplication, route$/;"	kind:namespace	line:8
 Flask	../switch/apitest.py	/^from flask import Flask, jsonify, abort, make_response$/;"	kind:namespace	line:1
 Flow	../switch/apitest.py	/^class Flow(peewee.Model):$/;"	kind:class	line:6
-Flow	../switch/import.py	/^class Flow(peewee.Model):$/;"	kind:class	line:8
-Flow	../switch/rest_13.py	/^class Flow(peewee.Model):$/;"	kind:class	line:17
+Flow1	../switch/import1.py	/^class Flow1(peewee.Model):$/;"	kind:class	line:8
+Flow1	../switch/rest_13.py	/^class Flow1(peewee.Model):$/;"	kind:class	line:18
+Flow2	../switch/import2.py	/^class Flow2(peewee.Model):$/;"	kind:class	line:8
+Flow2	../switch/rest_13.py	/^class Flow2(peewee.Model):$/;"	kind:class	line:30
 MAIN_DISPATCHER	../switch/fast_switch_13.py	/^from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER$/;"	kind:namespace	line:18
 MAIN_DISPATCHER	../switch/switch_13.py	/^from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER$/;"	kind:namespace	line:18
 Meta	../switch/apitest.py	/^    class Meta:$/;"	kind:class	line:12
-Meta	../switch/import.py	/^    class Meta:$/;"	kind:class	line:14
-Meta	../switch/rest_13.py	/^    class Meta:$/;"	kind:class	line:23
+Meta	../switch/import1.py	/^    class Meta:$/;"	kind:class	line:17
+Meta	../switch/import2.py	/^    class Meta:$/;"	kind:class	line:17
+Meta	../switch/rest_13.py	/^    class Meta:$/;"	kind:class	line:27
+Meta	../switch/rest_13.py	/^    class Meta:$/;"	kind:class	line:39
 OFP_VERSIONS	../switch/fast_switch_13.py	/^    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]$/;"	kind:variable	line:27
 OFP_VERSIONS	../switch/switch_13.py	/^    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]$/;"	kind:variable	line:28
 Response	../switch/rest_13.py	/^from webob import Response$/;"	kind:namespace	line:4
 Switch13	../switch/fast_switch_13.py	/^class Switch13(app_manager.RyuApp):$/;"	kind:class	line:26
 Switch13	../switch/switch_13.py	/^class Switch13(app_manager.RyuApp):$/;"	kind:class	line:27
-SwitchController	../switch/rest_13.py	/^class SwitchController(ControllerBase):$/;"	kind:class	line:55
-SwitchRest13	../switch/rest_13.py	/^class SwitchRest13(switch_13.Switch13):$/;"	kind:class	line:26
+SwitchController	../switch/rest_13.py	/^class SwitchController(ControllerBase):$/;"	kind:class	line:89
+SwitchRest13	../switch/rest_13.py	/^class SwitchRest13(switch_13.Switch13):$/;"	kind:class	line:42
 WSGIApplication	../switch/rest_13.py	/^from ryu.app.wsgi import ControllerBase, WSGIApplication, route$/;"	kind:namespace	line:8
-_CONTEXTS	../switch/rest_13.py	/^    _CONTEXTS = {'wsgi': WSGIApplication}$/;"	kind:variable	line:28
+_CONTEXTS	../switch/rest_13.py	/^    _CONTEXTS = {'wsgi': WSGIApplication}$/;"	kind:variable	line:44
 __init__	../switch/fast_switch_13.py	/^    def __init__(self, *args, **kwargs):$/;"	kind:member	line:29
-__init__	../switch/rest_13.py	/^    def __init__(self, *args, **kwargs):$/;"	kind:member	line:30
-__init__	../switch/rest_13.py	/^    def __init__(self, req, link, data, **config):$/;"	kind:member	line:57
+__init__	../switch/rest_13.py	/^    def __init__(self, *args, **kwargs):$/;"	kind:member	line:46
+__init__	../switch/rest_13.py	/^    def __init__(self, req, link, data, **config):$/;"	kind:member	line:91
 __init__	../switch/switch_13.py	/^    def __init__(self, *args, **kwargs):$/;"	kind:member	line:30
 abort	../switch/apitest.py	/^from flask import Flask, jsonify, abort, make_response$/;"	kind:namespace	line:1
 add_flow	../switch/fast_switch_13.py	/^    def add_flow(self, datapath, priority, match, actions):$/;"	kind:member	line:93
 add_flow	../switch/switch_13.py	/^    def add_flow(self, datapath, priority, match, actions):$/;"	kind:member	line:41
-add_mac_table	../switch/rest_13.py	/^    def add_mac_table(self, req, **kwargs):$/;"	kind:member	line:62
+add_mac_table	../switch/rest_13.py	/^    def add_mac_table(self, req, **kwargs):$/;"	kind:member	line:96
 api	../switch/apitest.py	/^api = Flask(__name__)$/;"	kind:variable	line:15
 apitest.py	../switch/apitest.py	1;"	kind:file	line:1
 app_manager	../switch/fast_switch_13.py	/^from ryu.base import app_manager$/;"	kind:namespace	line:16
 app_manager	../switch/switch_13.py	/^from ryu.base import app_manager$/;"	kind:namespace	line:16
 database	../switch/apitest.py	/^        database = db$/;"	kind:variable	line:13
-database	../switch/import.py	/^        database = db$/;"	kind:variable	line:15
-database	../switch/rest_13.py	/^        database = db$/;"	kind:variable	line:24
+database	../switch/import1.py	/^        database = db$/;"	kind:variable	line:18
+database	../switch/import2.py	/^        database = db$/;"	kind:variable	line:18
+database	../switch/rest_13.py	/^        database = db1$/;"	kind:variable	line:28
+database	../switch/rest_13.py	/^        database = db2$/;"	kind:variable	line:40
 datapath	../switch/apitest.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:10
-datapath	../switch/import.py	/^                    datapath = datapath)$/;"	kind:variable	line:27
-datapath	../switch/import.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:12
-datapath	../switch/rest_13.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:21
+datapath	../switch/import1.py	/^                    datapath = datapath)/;"	kind:variable	line:33
+datapath	../switch/import1.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:15
+datapath	../switch/import2.py	/^                    datapath = datapath)$/;"	kind:variable	line:33
+datapath	../switch/import2.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:15
+datapath	../switch/rest_13.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:25
+datapath	../switch/rest_13.py	/^    datapath = peewee.TextField()$/;"	kind:variable	line:37
 db	../switch/apitest.py	/^db = peewee.SqliteDatabase("\/root\/data.db")$/;"	kind:variable	line:4
-db	../switch/import.py	/^db = peewee.SqliteDatabase("data.db")$/;"	kind:variable	line:5
-db	../switch/rest_13.py	/^db = peewee.SqliteDatabase("\/root\/data.db")$/;"	kind:variable	line:15
+db	../switch/import1.py	/^db = peewee.SqliteDatabase("data1.db")$/;"	kind:variable	line:5
+db	../switch/import2.py	/^db = peewee.SqliteDatabase("data2.db")$/;"	kind:variable	line:5
+db1	../switch/rest_13.py	/^db1 = peewee.SqliteDatabase("\/root\/data1.db")$/;"	kind:variable	line:15
+db2	../switch/rest_13.py	/^db2 = peewee.SqliteDatabase("\/root\/data2.db")$/;"	kind:variable	line:16
 del_flow	../switch/switch_13.py	/^    def del_flow(self, datapath, priority, match, actions):$/;"	kind:member	line:52
 dpid_lib	../switch/rest_13.py	/^from ryu.lib import dpid as dpid_lib$/;"	kind:namespace	line:9
 ethernet	../switch/fast_switch_13.py	/^from ryu.lib.packet import ethernet$/;"	kind:namespace	line:24
 ethernet	../switch/switch_13.py	/^from ryu.lib.packet import ethernet$/;"	kind:namespace	line:24
 fast_switch_13.py	../switch/fast_switch_13.py	1;"	kind:file	line:1
 get_flow	../switch/apitest.py	/^def get_flow(in_port):$/;"	kind:function	line:18
-import.py	../switch/import.py	1;"	kind:file	line:1
+import1.py	../switch/import1.py	1;"	kind:file	line:1
+import2.py	../switch/import2.py	1;"	kind:file	line:1
 in_port	../switch/apitest.py	/^    in_port = peewee.IntegerField()$/;"	kind:variable	line:7
-in_port	../switch/import.py	/^    in_port = peewee.IntegerField()$/;"	kind:variable	line:9
-in_port	../switch/rest_13.py	/^    in_port = peewee.IntegerField()$/;"	kind:variable	line:18
+in_port1	../switch/import1.py	/^    in_port1 = peewee.IntegerField()$/;"	kind:variable	line:9
+in_port1	../switch/import2.py	/^    in_port1 = peewee.IntegerField()$/;"	kind:variable	line:9
+in_port1	../switch/rest_13.py	/^    in_port1 = peewee.IntegerField()$/;"	kind:variable	line:19
+in_port1	../switch/rest_13.py	/^    in_port1 = peewee.IntegerField()$/;"	kind:variable	line:31
+in_port2	../switch/import1.py	/^                    in_port2 = int(in_port2),$/;"	kind:variable	line:30
+in_port2	../switch/import1.py	/^    in_port2 = peewee.IntegerField()$/;"	kind:variable	line:12
+in_port2	../switch/import2.py	/^                    in_port2 = int(in_port2),$/;"	kind:variable	line:30
+in_port2	../switch/import2.py	/^    in_port2 = peewee.IntegerField()$/;"	kind:variable	line:12
+in_port2	../switch/rest_13.py	/^    in_port2 = peewee.IntegerField()$/;"	kind:variable	line:22
+in_port2	../switch/rest_13.py	/^    in_port2 = peewee.IntegerField()$/;"	kind:variable	line:34
 ipv4	../switch/fast_switch_13.py	/^from ryu.lib.packet import ipv4$/;"	kind:namespace	line:22
 ipv4	../switch/switch_13.py	/^from ryu.lib.packet import ipv4$/;"	kind:namespace	line:22
 json	../switch/rest_13.py	/^import json$/;"	kind:namespace	line:1
 jsonify	../switch/apitest.py	/^from flask import Flask, jsonify, abort, make_response$/;"	kind:namespace	line:1
 mac_address	../switch/apitest.py	/^    mac_address = peewee.TextField()$/;"	kind:variable	line:8
-mac_address	../switch/import.py	/^                    mac_address = mac_address,$/;"	kind:variable	line:25
-mac_address	../switch/import.py	/^    mac_address = peewee.TextField()$/;"	kind:variable	line:10
-mac_address	../switch/rest_13.py	/^    mac_address = peewee.TextField()$/;"	kind:variable	line:19
+mac_address1	../switch/import1.py	/^                    mac_address1 = mac_address1,$/;"	kind:variable	line:28
+mac_address1	../switch/import1.py	/^    mac_address1 = peewee.TextField()$/;"	kind:variable	line:10
+mac_address1	../switch/import2.py	/^                    mac_address1 = mac_address1,$/;"	kind:variable	line:28
+mac_address1	../switch/import2.py	/^    mac_address1 = peewee.TextField()$/;"	kind:variable	line:10
+mac_address1	../switch/rest_13.py	/^    mac_address1 = peewee.TextField()$/;"	kind:variable	line:20
+mac_address1	../switch/rest_13.py	/^    mac_address1 = peewee.TextField()$/;"	kind:variable	line:32
+mac_address2	../switch/import1.py	/^                    mac_address2 = mac_address2,$/;"	kind:variable	line:31
+mac_address2	../switch/import1.py	/^    mac_address2 = peewee.TextField()$/;"	kind:variable	line:13
+mac_address2	../switch/import2.py	/^                    mac_address2 = mac_address2,$/;"	kind:variable	line:31
+mac_address2	../switch/import2.py	/^    mac_address2 = peewee.TextField()$/;"	kind:variable	line:13
+mac_address2	../switch/rest_13.py	/^    mac_address2 = peewee.TextField()$/;"	kind:variable	line:23
+mac_address2	../switch/rest_13.py	/^    mac_address2 = peewee.TextField()$/;"	kind:variable	line:35
 make_response	../switch/apitest.py	/^from flask import Flask, jsonify, abort, make_response$/;"	kind:namespace	line:1
 not_found	../switch/apitest.py	/^def not_found(error):$/;"	kind:function	line:37
 ofp_event	../switch/fast_switch_13.py	/^from ryu.controller import ofp_event$/;"	kind:namespace	line:17
@@ -74,26 +103,36 @@ ofp_event	../switch/switch_13.py	/^from ryu.controller import ofp_event$/;"	kind
 ofproto_v1_3	../switch/fast_switch_13.py	/^from ryu.ofproto import ofproto_v1_3$/;"	kind:namespace	line:20
 ofproto_v1_3	../switch/switch_13.py	/^from ryu.ofproto import ofproto_v1_3$/;"	kind:namespace	line:20
 out_port	../switch/apitest.py	/^    out_port = peewee.IntegerField()$/;"	kind:variable	line:9
-out_port	../switch/import.py	/^                    out_port = int(out_port),$/;"	kind:variable	line:26
-out_port	../switch/import.py	/^    out_port = peewee.IntegerField()$/;"	kind:variable	line:11
-out_port	../switch/rest_13.py	/^    out_port = peewee.IntegerField()$/;"	kind:variable	line:20
+out_port1	../switch/import1.py	/^                    out_port1 = int(out_port1),$/;"	kind:variable	line:29
+out_port1	../switch/import1.py	/^    out_port1 = peewee.IntegerField()$/;"	kind:variable	line:11
+out_port1	../switch/import2.py	/^                    out_port1 = int(out_port1),$/;"	kind:variable	line:29
+out_port1	../switch/import2.py	/^    out_port1 = peewee.IntegerField()$/;"	kind:variable	line:11
+out_port1	../switch/rest_13.py	/^    out_port1 = peewee.IntegerField()$/;"	kind:variable	line:21
+out_port1	../switch/rest_13.py	/^    out_port1 = peewee.IntegerField()$/;"	kind:variable	line:33
+out_port2	../switch/import1.py	/^                    out_port2 = int(out_port2),$/;"	kind:variable	line:32
+out_port2	../switch/import1.py	/^    out_port2 = peewee.IntegerField()$/;"	kind:variable	line:14
+out_port2	../switch/import2.py	/^                    out_port2 = int(out_port2),$/;"	kind:variable	line:32
+out_port2	../switch/import2.py	/^    out_port2 = peewee.IntegerField()$/;"	kind:variable	line:14
+out_port2	../switch/rest_13.py	/^    out_port2 = peewee.IntegerField()$/;"	kind:variable	line:24
+out_port2	../switch/rest_13.py	/^    out_port2 = peewee.IntegerField()$/;"	kind:variable	line:36
 packet	../switch/fast_switch_13.py	/^from ryu.lib.packet import packet$/;"	kind:namespace	line:21
 packet	../switch/switch_13.py	/^from ryu.lib.packet import packet$/;"	kind:namespace	line:21
 peewee	../switch/apitest.py	/^import peewee$/;"	kind:namespace	line:2
-peewee	../switch/import.py	/^import peewee$/;"	kind:namespace	line:2
+peewee	../switch/import1.py	/^import peewee$/;"	kind:namespace	line:2
+peewee	../switch/import2.py	/^import peewee$/;"	kind:namespace	line:2
 peewee	../switch/rest_13.py	/^import peewee$/;"	kind:namespace	line:11
 rest_13.py	../switch/rest_13.py	1;"	kind:file	line:1
 route	../switch/rest_13.py	/^from ryu.app.wsgi import ControllerBase, WSGIApplication, route$/;"	kind:namespace	line:8
 set_ev_cls	../switch/fast_switch_13.py	/^from ryu.controller.handler import set_ev_cls$/;"	kind:namespace	line:19
 set_ev_cls	../switch/rest_13.py	/^from ryu.controller.handler import set_ev_cls$/;"	kind:namespace	line:7
 set_ev_cls	../switch/switch_13.py	/^from ryu.controller.handler import set_ev_cls$/;"	kind:namespace	line:19
-set_flow	../switch/rest_13.py	/^    def set_flow(self, dpid, in_port, mac_address, out_port):$/;"	kind:member	line:44
+set_flow	../switch/rest_13.py	/^    def set_flow(self, dpid1, flow1_in_port1, flow1_mac_address1, flow1_out_port1, flow1_in_port2, flow1_mac_address2, flow1_out_port2,$/;"	kind:member	line:60
 simple_switch_instance_name	../switch/rest_13.py	/^simple_switch_instance_name = 'switch_api_app'$/;"	kind:variable	line:14
 str_to_int	../switch/rest_13.py	/^from ryu.lib.ofctl_utils import str_to_int$/;"	kind:namespace	line:10
 switch_13	../switch/rest_13.py	/^from ryu.app import switch_13$/;"	kind:namespace	line:3
 switch_13.py	../switch/switch_13.py	1;"	kind:file	line:1
 switch_features_handler	../switch/fast_switch_13.py	/^    def switch_features_handler(self, ev):$/;"	kind:member	line:35
-switch_features_handler	../switch/rest_13.py	/^    def switch_features_handler(self, ev):$/;"	kind:member	line:38
+switch_features_handler	../switch/rest_13.py	/^    def switch_features_handler(self, ev):$/;"	kind:member	line:54
 switch_features_handler	../switch/switch_13.py	/^    def switch_features_handler(self, ev):$/;"	kind:member	line:36
 vlan	../switch/fast_switch_13.py	/^from ryu.lib.packet import vlan$/;"	kind:namespace	line:23
 vlan	../switch/switch_13.py	/^from ryu.lib.packet import vlan$/;"	kind:namespace	line:23

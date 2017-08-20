@@ -13,7 +13,7 @@ import peewee
 
 simple_switch_instance_name = 'switch_api_app'
 db1 = peewee.SqliteDatabase("/root/data1.db")
-db2 = peewee.SqliteDatabase("/root/data1.db")
+db2 = peewee.SqliteDatabase("/root/data2.db")
 
 class Flow1(peewee.Model):
     in_port1 = peewee.IntegerField()
@@ -57,14 +57,32 @@ class SwitchRest13(switch_13.Switch13):
         self.switches[datapath.id] = datapath
         self.mac_to_port.setdefault(datapath.id, {})
     
-    def set_flow(self, dpid, in_port, mac_address, out_port):
-        datapath = self.switches.get(dpid)
-        parser = datapath.ofproto_parser
+    def set_flow(self, dpid1, flow1_in_port1, flow1_mac_address1, flow1_out_port1, flow1_in_port2, flow1_mac_address2, flow1_out_port2,
+                        dpid2, flow2_in_port1, flow2_mac_address1, flow2_out_port1, flow2_in_port2, flow2_mac_address2, flow2_out_port2):
+        datapath1 = self.switches.get(dpid1)
+        datapath2 = self.switches.get(dpid2)
+        parser1 = datapath1.ofproto_parser
+        parser2 = datapath2.ofproto_parser
 
-        actions = [parser.OFPActionOutput(out_port)]
-        match = parser.OFPMatch(in_port=in_port, eth_dst=mac_address)
+        actions = [parser1.OFPActionOutput(flow1_out_port1)]
+        match = parser1.OFPMatch(in_port=flow1_in_port1, eth_dst=flow1_mac_address1)
 
-        self.add_flow(datapath, 1, match, actions)
+        self.add_flow(datapath1, 1, match, actions)
+
+        actions = [parser2.OFPActionOutput(flow1_out_port2)]
+        match = parser2.OFPMatch(in_port=flow1_in_port2, eth_dst=flow1_mac_address2)
+
+        self.add_flow(datapath1, 1, match, actions)
+
+        actions = [parser1.OFPActionOutput(flow2_out_port1)]
+        match = parser1.OFPMatch(in_port=flow2_in_port1, eth_dst=flow2_mac_address1)
+
+        self.add_flow(datapath2, 1, match, actions)
+
+        actions = [parser2.OFPActionOutput(flow2_out_port2)]
+        match = parser2.OFPMatch(in_port=flow2_in_port2, eth_dst=flow2_mac_address2)
+
+        self.add_flow(datapath2, 1, match, actions)
 
         return 
     
@@ -81,12 +99,9 @@ class SwitchController(ControllerBase):
         in_port1 = str_to_int(kwargs['in_port1'])
 
         flow1 = Flow1.get(Flow1.in_port1 == in_port1)
-        flow2 = Flow1.get(Flow2.in_port1 == in_port1)
+        flow2 = Flow2.get(Flow2.in_port1 == in_port1)
         dpid1 = dpid_lib.str_to_dpid(flow1.datapath)
         dpid2 = dpid_lib.str_to_dpid(flow2.datapath)
 
-        if dpid not in simple_switch.mac_to_port:
-            return Response(status=404)
-
-        return simple_switch.set_flow(dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1,
-                                       dpid2, flow2.in_port1, flow2.mac_address1, flow2.out_port1)
+        return simple_switch.set_flow(dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2,
+                                       dpid2, flow2.in_port2, flow2.mac_address2, flow2.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2,)
