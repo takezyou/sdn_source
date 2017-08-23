@@ -92,31 +92,32 @@ class SwitchController(ControllerBase):
     def __init__(self, req, link, data, **config):
         super(SwitchController, self).__init__(req, link, data, **config)
         self.simple_switch_app = data[simple_switch_instance_name]
-        self.list = []
 
     @route('switch', '/add/{hostname1}/{hostname2}', methods=['GET'])
     def add_mac_table(self, req, **kwargs):
 
         simple_switch = self.simple_switch_app
-        hostname1 = str_to_int(kwargs[hostname1])
-        hostname2 = str_to_int(kwargs[hostname2])
-        ran = random.randint(1,2)
+        hostname1 = str_to_int(kwargs['hostname1'])
+        hostname2 = str_to_int(kwargs['hostname2'])
+        ran1 = random.randint(1,2)
+        ran2 = random.randint(3,4)
 
         if hostname1 == 1 and hostname2 == 3:
 
-            flow1 = Flow1.get(Flow1.id == ran)
-            flow2 = Flow2.get(Flow2.id == ran)
+            flow1 = Flow1.get(Flow1.id == ran1)
+            flow2 = Flow2.get(Flow2.id == ran1)
+            dpid1 = dpid_lib.str_to_dpid(flow1.datapath)
+            dpid2 = dpid_lib.str_to_dpid(flow2.datapath)
 
-            list = self[dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2,
-                    dpid2, flow2.in_port2, flow2.mac_address2, flow2.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2]
+            return simple_switch.set_flow(dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1, flow1.in_port2, flow1.mac_address2, flow1.out_port2,
+                                            dpid2, flow2.in_port1, flow2.mac_address1, flow2.out_port1, flow2.in_port2, flow2.mac_address2, flow2.out_port2)
 
-            return simple_switch.set_flow(dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2,
-                                        　　dpid2, flow2.in_port2, flow2.mac_address2, flow2.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2)
-             
         if hostname1 == 2 and hostname2 == 4:
 
-        flow1 = Flow1.get(Flow1.in_port1 == in_port1)
-        flow2 = Flow2.get(Flow2.in_port1 == in_port1)
-        dpid1 = dpid_lib.str_to_dpid(flow1.datapath)
-        dpid2 = dpid_lib.str_to_dpid(flow2.datapath)
+            flow1 = Flow1.get(Flow1.id == ran2)
+            flow2 = Flow2.get(Flow2.id == ran2)
+            dpid1 = dpid_lib.str_to_dpid(flow1.datapath)
+            dpid2 = dpid_lib.str_to_dpid(flow2.datapath)
 
+            return simple_switch.set_flow(dpid1, flow1.in_port1, flow1.mac_address1, flow1.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2,
+                                            dpid2, flow2.in_port1, flow2.mac_address1, flow2.out_port1,flow1.in_port2, flow1.mac_address2, flow1.out_port2)
