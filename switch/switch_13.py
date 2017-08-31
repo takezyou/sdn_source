@@ -1,23 +1,13 @@
-# Copyright (C) 2016 Nippon Telegraph and Telephone Corporation.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-# implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from ryu.base import app_manager
+
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
+
 from ryu.ofproto import ofproto_v1_3
+from ryu.ofproto import ether
+from ryu.ofproto import inet
+
 from ryu.lib.packet import packet
 from ryu.lib.packet import ipv4
 from ryu.lib.packet import vlan
@@ -37,6 +27,29 @@ class Switch13(app_manager.RyuApp):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
+
+        dpid = datapath.id
+        if dpid == 1:
+            actions = [parser.OFPActionOutput(1)]
+            match = parser.OFPMatch(in_port=4, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=1, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            self.add_flow(datapath, 1, match, actions)
+        
+        if dpid == 2:
+            actions = [parser.OFPActionOutput(1)]
+            match = parser.OFPMatch(in_port=4, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=1, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            self.add_flow(datapath, 1, match, actions)
 
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
