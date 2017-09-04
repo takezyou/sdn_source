@@ -182,7 +182,7 @@ class SwitchRest13(switch_13.Switch13):
             self.add_flow(datapath3, 1, match, actions)
         
     def flg_update(self, hostname):
-        route = Route.get(Route.hostname1 == hostname1)
+        route = Route.get(Route.hostname1 == hostname)
         if route.flg == 1:
             route.flg = 0
             route.save()
@@ -203,7 +203,7 @@ class SwitchController(ControllerBase):
         hostname2 = str_to_int(kwargs['hostname2'])
         route = Route.get(Route.hostname1 == hostname1)
 
-        if hostname1 == route1.hostname1 and hostname2 == route1.hostname2:
+        if hostname1 == route.hostname1 and hostname2 == route.hostname2:
             flow = Flow.filter(Flow.route_id == 1).execute()
             for f in flow:
                     simple_switch.get_flow(f.in_port1, f.vlan1, f.out_port1, f.in_port2, f.vlan2, f.out_port2)
