@@ -193,7 +193,6 @@ class SwitchController(ControllerBase):
         hostname1 = str_to_int(kwargs['hostname1'])
         hostname2 = str_to_int(kwargs['hostname2'])
         route1 = Route.get(Route.hostname1 == hostname1)
-        route2 = Route.get(Route.hostname1 == hostname2)
 
         if hostname1 == route1.hostname1 and hostname2 == route1.hostname2:
             flow = Flow.filter(Flow.route_id == 1).execute()
@@ -201,9 +200,9 @@ class SwitchController(ControllerBase):
                     simple_switch.get_flow(f.in_port1, f.vlan1, f.out_port1, f.in_port2, f.vlan2, f.out_port2)
             
             for f in flow:
-                if f.in_port1 != 4 and route1.flg != 1:
+                if f.in_port1 != 4 and route1.flg != 0:
                         simple_switch.set2_flow(f.in_port1, f.vlan1, f.out_port1, f.in_port2, f.vlan2, f.out_port2)
-                elif f.in_port1 != 3 and route2.flg != 1:
+                elif f.in_port1 != 3 and route1.flg != 1:
                         simple_switch.set1_flow(f.in_port1, f.vlan1, f.out_port1)
 
             if route1.flg == 1:
@@ -212,10 +211,3 @@ class SwitchController(ControllerBase):
             elif route1.flg == 0:
                 route1.flg = 1
                 route1.save()
-
-            if route2.flg == 1:
-                route2.flg = 0
-                route2.save()
-            elif route2.flg == 0:
-                route2.flg = 1
-                route2.save()
