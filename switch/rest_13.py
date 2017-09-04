@@ -181,7 +181,7 @@ class SwitchRest13(switch_13.Switch13):
 
             self.add_flow(datapath3, 1, match, actions)
         
-    def flg_update(self, hostname)
+    def flg_update(self, hostname):
         route = Route.get(Route.hostname1 == hostname1)
         if route.flg == 1:
             route.flg = 0
