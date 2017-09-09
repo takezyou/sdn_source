@@ -185,21 +185,18 @@ class SwitchRest13(switch_13.Switch13):
         route1 = Route.get(Route.hostname1 == hostname)
         route2 = Route.get(Route.hostname1 == hostname)
 
-        if hostname == 1: 
-            if route1.flg == 1:
-                route1.flg = 0
-                route1.save()
-            elif route1.flg == 0:
-                route1.flg = 1
-                route1.save()
-
-        if hostname == 3:
-            if route2.flg == 1:
-                route2.flg = 0
-                route2.save()
-            elif route2.flg == 0:
-                route2.flg = 1
-                route2.save()
+        if route1.flg == 1:
+            route1.flg = 0
+            route1.save()
+        elif route1.flg == 0:
+            route1.flg = 1
+            route1.save()
+        if route2.flg == 1:
+            route2.flg = 0
+            route2.save()
+        elif route2.flg == 0:
+            route2.flg = 1
+            route2.save()
     
 class SwitchController(ControllerBase):
 
