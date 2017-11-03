@@ -183,7 +183,7 @@ class SwitchRest13(switch_13.Switch13):
         
     def flg_update(self, hostname):
         route1 = Route.get(Route.hostname1 == hostname)
-        route2 = Route.get(Route.hostname1 == hostname)
+        route2 = Route.get(Route.hostname2 == hostname)
 
         if route1.flg == 1:
             route1.flg = 0
