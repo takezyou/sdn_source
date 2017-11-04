@@ -34,6 +34,7 @@ class Switch13(app_manager.RyuApp):
         self.vlan_type=ether.ETH_TYPE_8021Q
         self.ipv4_type=ether.ETH_TYPE_IP
         self.lldp_type=ether.ETH_TYPE_LLDP
+        self.cfm_type=ether.ETH_TYPE_ cfm
         self.lldp_topo = {}
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
@@ -86,7 +87,9 @@ class Switch13(app_manager.RyuApp):
         parser = datapath.ofproto_parser
 
         pkt = packet.Packet()
-        pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr ,dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
+        pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr, dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
+
+        pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr, dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
  
         tlv_chassis_id = lldp.ChassisID(subtype=lldp.ChassisID.SUB_LOCALLY_ASSIGNED, chassis_id=str(datapath.id))
         tlv_port_id = lldp.PortID(subtype=lldp.PortID.SUB_LOCALLY_ASSIGNED, port_id=str(port_no))
@@ -94,7 +97,6 @@ class Switch13(app_manager.RyuApp):
         tlv_end = lldp.End()
         tlvs = (tlv_chassis_id, tlv_port_id, tlv_ttl, tlv_end)
         pkt.add_protocol(lldp.lldp(tlvs))
-        pkt.add_protocol(cfm.data_tlv(length=0, data_value=time.time()))
         pkt.serialize()
         data = pkt.data
 
@@ -119,11 +121,9 @@ class Switch13(app_manager.RyuApp):
             return
  
         pkt_lldp = pkt.get_protocol(lldp.lldp)
-        pkt_cfm = pkt.get_protocol(cfm.data_tlv)
         if pkt_lldp:
             self.handle_lldp(datapath, port, pkt_lldp)
- 
- 
+    
     def handle_lldp(self, datapath, port, pkt_lldp):
         print "datapath:", datapath.id, "port:", port, "datapath:", pkt_lldp.tlvs[0].chassis_id, "port:", pkt_lldp.tlvs[1].port_id
         
