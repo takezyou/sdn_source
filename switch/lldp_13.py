@@ -68,11 +68,11 @@ class Switch13(app_manager.RyuApp):
         req = parser.OFPPortDescStatsRequest(datapath, 0, ofproto.OFPP_ANY)
         datapath.send_msg(req)
 
+    # add flow
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
  
-        # construct flow_mod message and send it.
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
@@ -87,16 +87,17 @@ class Switch13(app_manager.RyuApp):
         
         for stat in ev.msg.body:
             if stat.port_no < ofproto.OFPP_MAX:
-                timestamp = time.time()
                 print "datapath:", datapath.id
                 print "prot:", stat.port_no
                 print "hard:", stat.hw_addr
-                self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr, timestamp)
+                self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr)
  
     
-    def send_lldp_packet (self, datapath, port_no, hw_addr, timestamp):
+    def send_lldp_packet (self, datapath, port_no, hw_addr):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
+
+        timestamp = time.time()
 
         pkt = packet.Packet()
         pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr, dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
