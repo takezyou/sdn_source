@@ -14,8 +14,18 @@ from ryu.lib import dpid as dpid_lib
 from ryu.lib.ofctl_utils import str_to_int
 import peewee
 
-
 simple_switch_instance_name = 'switch_api_app'
+db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd=""))
+
+class Vlan(peewee.Model):
+    vlan = peewee.IntegerField()
+    start = peewee.CharField()
+    end = peewee.CharField()
+    path = peewee.CharField()
+
+    class Meta:
+        database = db # this model uses the people database
+
 
 class SwitchRest13(lldp_13.Switch13):
 
@@ -46,6 +56,16 @@ class SwitchController(ControllerBase):
 
     @route('switch', '/add/{start}/{end}', methods=['GET'])
     def add_mac_table(self, req, **kwargs):
+        start = kwargs['start']
+        end = kwargs['end']
+        print "staart:", start , "end:", end
+
+        start = Vlan.get(Vlan.start == start)
+        end = Vlan.get(Vlan.end == end)
+
+
+
+
         return
 
     @route('switch', '/del/{vlan}', methods=['GET'])
