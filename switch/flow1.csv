@@ -1,5 +1,0 @@
-#idroute_idin_port1vlan1out_port1in_port2vlan2out_port2
-1       1       4       10      1
-2       1       3       10      1       1       10      2
-3       2       4       10      1
-4       2       3       10      1       1       10      2
