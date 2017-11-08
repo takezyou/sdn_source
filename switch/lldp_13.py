@@ -87,9 +87,6 @@ class Switch13(app_manager.RyuApp):
         
         for stat in ev.msg.body:
             if stat.port_no < ofproto.OFPP_MAX:
-                print "datapath:", datapath.id
-                print "prot:", stat.port_no
-                print "hard:", stat.hw_addr
                 self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr)
  
     
@@ -138,7 +135,7 @@ class Switch13(app_manager.RyuApp):
     
     def handle_lldp(self, datapath, port, pkt_lldp):
         timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
-        print "datapath:", datapath.id, "port:", port, "datapath:", pkt_lldp.tlvs[0].chassis_id, "port:", pkt_lldp.tlvs[1].port_id, "delay", timestamp_diff 
+        
 
     def disassembly(self, path):
          pa = path.split("-")

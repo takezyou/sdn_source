@@ -15,7 +15,7 @@ from ryu.lib.ofctl_utils import str_to_int
 import peewee
 
 simple_switch_instance_name = 'switch_api_app'
-db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd=""))
+db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd="")
 
 class Vlan(peewee.Model):
     vlan = peewee.IntegerField()
@@ -63,7 +63,7 @@ class SwitchController(ControllerBase):
         start = Vlan.get(Vlan.start == start)
         end = Vlan.get(Vlan.end == end)
 
-        if start === start.start and end == end.end:
+        if start == start.start and end == end.end:
             path = start.path
             path_list = path.split(",")
             for pa in path_list:
