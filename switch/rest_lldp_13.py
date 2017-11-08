@@ -63,10 +63,14 @@ class SwitchController(ControllerBase):
         start = Vlan.get(Vlan.start == start)
         end = Vlan.get(Vlan.end == end)
 
+        if start === start.start and end == end.end:
+            path = start.path
+            path_list = path.split(",")
+            for pa in path_list:
+                dpport = self.disassembly(pa)
         
+        return dpport
 
-
-        return
 
     @route('switch', '/del/{vlan}', methods=['GET'])
     def del_mac_table(self, req, **kwargs):
