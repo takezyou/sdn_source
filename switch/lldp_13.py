@@ -135,10 +135,3 @@ class Switch13(app_manager.RyuApp):
     
     def handle_lldp(self, datapath, port, pkt_lldp):
         timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
-        
-
-    def disassembly(self, path):
-         pa = path.split("-")
-         dict = {"datapath":pa[0] ,"port":pa[1]}
-
-         return dict
