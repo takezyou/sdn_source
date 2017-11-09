@@ -78,6 +78,19 @@ class Switch13(app_manager.RyuApp):
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
                                 match=match, instructions=inst)
         datapath.send_msg(mod)
+    
+    def del_flow(self, vlan):
+        for dp in self.datapaths: 
+            ofproto = dp.ofproto
+            parser = dp.ofproto_parser
+
+            match = parser.OFPMatch(vlan_vid=(int(vlan) | ofproto.OFPVID_PRESENT))
+
+            # construct flow_mod message and send it.
+            inst = []
+            mod = parser.OFPFlowMod(datapath=dp, priority=1,
+                                command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
+            dp.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
     def port_desc_stats_reply_handler(self, ev):
