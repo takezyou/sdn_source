@@ -80,14 +80,7 @@ class SwitchController(ControllerBase):
         e = Vlan.get(Vlan.end == end)
 
         if start == s.start and end == e.end:
-            vlan = s.vlan
-            path = s.path
-            path_list = path.split(",")
-            for i in range(len(path_list)):
-                if i % 2 != 0:
-                    path_join = ",".join([path_list[i-1], path_list[i]])
-                    path = re.split('[,-]',path_join)
-                    self.switch_app.set_add_flow(vlan, int(path[0]), int(path[1]), int(path[3]))
+            self.path_division(s, e)
 
     @route('switch', '/del/{vlan}', methods=['GET'])
     def del_mac_table(self, req, **kwargs):
@@ -100,4 +93,23 @@ class SwitchController(ControllerBase):
 
     @route('switch', '/modify/{start}/{end}', methods=['GET'])
     def modify_mac_table(self, req, **kwargs):
-        return
+        start = kwargs['start']
+        end = kwargs['end']
+
+        s = Vlan.get(Vlan.start == start)
+        e = Vlan.get(Vlan.end == end)
+
+        self.switch_app.del_flow(s.vlan)
+
+        if start == s.start and end == e.end:
+            self.path_division(s, e)
+
+    def path_division(self, start, end):
+        vlan = start.vlan
+        path = start.path
+        path_list = path.split(",")
+        for i in range(len(path_list)):
+            if i % 2 != 0:
+                path_join = ",".join([path_list[i-1], path_list[i]])
+                path = re.split('[,-]',path_join)
+                self.switch_app.set_add_flow(vlan, int(path[0]), int(path[1]), int(path[3]))
