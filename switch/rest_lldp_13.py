@@ -103,6 +103,8 @@ class SwitchController(ControllerBase):
 
         if start == s.start and end == e.end:
             self.path_division(s, e)
+    
+    # def path_sort(self,)
 
     def path_division(self, start, end):
         vlan = start.vlan
