@@ -22,6 +22,25 @@ from ryu.lib.packet import ether_types
 
 from ryu import utils
 import time
+import numpy as np
+
+# <--- db declaration
+import peewee
+import MySQLdb
+
+db = peewee.MySQLDatabase("ryu_db", host="mat.ns.ie.u-ryukyu.ac.jp", port=3306, user="root", passwd="")
+
+class Topology(peewee.Model):
+    id = peewee.IntegerField()
+    dport1 = peewee.CharField()
+    dport2 = peewee.CharField()
+    delay = peewee.FloatField()
+    judge = peewee.CharField()
+
+    class Meta:
+        database = db
+
+# --->
 
 
 class Switch13(app_manager.RyuApp):
@@ -32,6 +51,8 @@ class Switch13(app_manager.RyuApp):
         # initialize mac address table.
         self.mac_to_port = {}
         self.datapaths = []
+        self.dp = []
+        self.dport = np.empty((0,2), int)
         self.hw_addr = '88:d7:f6:7a:34:90'
         self.ip_addr = '10.50.0.100'
         self.vlan_type=ether.ETH_TYPE_8021Q
@@ -57,6 +78,9 @@ class Switch13(app_manager.RyuApp):
     
     def lldp_loop(self):
         while True:
+            self.insert_host()
+            self.dport = np.empty((0,2), int)
+            self.dp = []
             for dp in self.datapaths:
                 self.send_port_desc_stats_request(dp)
             hub.sleep(10)
@@ -100,6 +124,7 @@ class Switch13(app_manager.RyuApp):
         
         for stat in ev.msg.body:
             if stat.port_no < ofproto.OFPP_MAX:
+                self.dport = np.append(self.dport, np.array([[datapath.id, stat.port_no]]), axis=0)
                 self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr)
  
     
@@ -144,7 +169,52 @@ class Switch13(app_manager.RyuApp):
  
         pkt_lldp = pkt.get_protocol(lldp.lldp)
         if pkt_lldp:
+            self.search_host(datapath, port)
             self.handle_lldp(datapath, port, pkt_lldp)
     
     def handle_lldp(self, datapath, port, pkt_lldp):
         timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
+        if datapath.id is not None:
+            if int(datapath.id) > int(pkt_lldp.tlvs[0].chassis_id):
+                sid1 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
+                sid2 = str(datapath.id) + "-" + str(port)
+            else:
+                sid1 = str(datapath.id) + "-" + str(port)
+                sid2 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
+            
+            # print sid1 + " , " + sid2
+            hoge = Topology.select().where((Topology.dport1 == sid1) & (Topology.dport2 == sid2)) 
+            if hoge.exists():
+                # print "update"
+                # <--- db update
+                topo = Topology.update(delay=timestamp_diff).where((Topology.dport1 == sid1) & (Topology.dport2 == sid2))
+                topo.execute()
+                # db update --->
+            else:
+                # <--- db insert
+                # print "insert"
+                topo = Topology.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S')
+                topo.execute()
+                # db insert --->
+
+    def search_host(self, datapath, port):
+        self.dport = np.delete(self.dport, np.where((self.dport[:,0]==datapath.id) & (self.dport[:,1]==port)), 0)
+    
+    def insert_host(self):
+        for i in range(len(self.dport)):
+            sid = str(self.dport[i][0]) + "-" + str(self.dport[i][1])
+            self.dp.append(sid)
+        self.dp.sort()
+
+        for j in range(len(self.dp)-1):
+            print self.dp[0] + " , " + self.dp[j+1]
+            hoge = Topology.select().where((Topology.dport1 == self.dp[0]) & (Topology.dport2 == self.dp[j+1]))
+            
+            if hoge.exists():
+                print "no insert"
+            else:
+                # <--- db insert
+                print "insert"
+                topo = Topology.insert(dport1=self.dp[0],dport2=self.dp[j+1],judge='H')
+                topo.execute()
+                # db insert --->

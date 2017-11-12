@@ -110,7 +110,6 @@ class SwitchController(ControllerBase):
         path = start.path
         path_list = path.split(",")
         path_list.sort()
-        print path_list
         for i in range(len(path_list)):
             if i % 2 != 0:
                 path_join = ",".join([path_list[i-1], path_list[i]])
