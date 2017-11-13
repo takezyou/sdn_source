@@ -174,6 +174,8 @@ class Switch13(app_manager.RyuApp):
     
     def handle_lldp(self, datapath, port, pkt_lldp):
         timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
+
+        # <--- db 
         if datapath.id is not None:
             if int(datapath.id) > int(pkt_lldp.tlvs[0].chassis_id):
                 sid1 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
@@ -182,20 +184,24 @@ class Switch13(app_manager.RyuApp):
                 sid1 = str(datapath.id) + "-" + str(port)
                 sid2 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
             
-            # print sid1 + " , " + sid2
-            hoge = Topology.select().where((Topology.dport1 == sid1) & (Topology.dport2 == sid2)) 
-            if hoge.exists():
-                # print "update"
+            print sid1 + " , " + sid2
+            topo = Topology.select().where((Topology.dport1 == sid1) & (Topology.dport2 == sid2)) 
+            if topo.exists():
+                print "update"
                 # <--- db update
-                topo = Topology.update(delay=timestamp_diff).where((Topology.dport1 == sid1) & (Topology.dport2 == sid2))
+                topo = Topology.update(delay=timestamp_diff,updated=time.time()).where((Topology.dport1 == sid1) & (Topology.dport2 == sid2))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
-                # print "insert"
-                topo = Topology.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S')
+                print "insert"
+                topo = Topology.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=time.time())
                 topo.execute()
                 # db insert --->
+            
+        # <--- db delete
+        Topology.delete().where((time.time() - Topology.updated) > 600).execute()
+        # ---> db delete
 
     def search_host(self, datapath, port):
         self.dport = np.delete(self.dport, np.where((self.dport[:,0]==datapath.id) & (self.dport[:,1]==port)), 0)
@@ -212,9 +218,17 @@ class Switch13(app_manager.RyuApp):
             
             if hoge.exists():
                 print "no insert"
+                # <--- db update
+                topo = Topology.update(updated=time.time()).where((Topology.dport1 == self.dp[0]) & (Topology.dport2 == self.dp[1]))
+                topo.execute()
+                # db update --->
             else:
                 # <--- db insert
                 print "insert"
-                topo = Topology.insert(dport1=self.dp[0],dport2=self.dp[j+1],judge='H')
+                topo = Topology.insert(dport1=self.dp[0],dport2=self.dp[j+1],judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
+            
+            # <--- db delete
+        Topology.delete().where((time.time() - Topology.updated) > 600).execute()
+        # ---> db delete
