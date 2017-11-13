@@ -36,6 +36,8 @@ class Topology(peewee.Model):
     dport2 = peewee.CharField()
     delay = peewee.FloatField()
     judge = peewee.CharField()
+    updated = peewee.IntegerField()
+
 
     class Meta:
         database = db
@@ -51,7 +53,7 @@ class Switch13(app_manager.RyuApp):
         # initialize mac address table.
         self.mac_to_port = {}
         self.datapaths = []
-        self.dp = []
+        self.dport_id = []
         self.dport = np.empty((0,2), int)
         self.hw_addr = '88:d7:f6:7a:34:90'
         self.ip_addr = '10.50.0.100'
@@ -80,7 +82,7 @@ class Switch13(app_manager.RyuApp):
         while True:
             self.insert_host()
             self.dport = np.empty((0,2), int)
-            self.dp = []
+            self.dport_id = []
             for dp in self.datapaths:
                 self.send_port_desc_stats_request(dp)
             hub.sleep(10)
@@ -209,23 +211,23 @@ class Switch13(app_manager.RyuApp):
     def insert_host(self):
         for i in range(len(self.dport)):
             sid = str(self.dport[i][0]) + "-" + str(self.dport[i][1])
-            self.dp.append(sid)
-        self.dp.sort()
+            self.dport_id.append(sid)
+        self.dport_id.sort()
 
-        for j in range(len(self.dp)-1):
-            print self.dp[0] + " , " + self.dp[j+1]
-            hoge = Topology.select().where((Topology.dport1 == self.dp[0]) & (Topology.dport2 == self.dp[j+1]))
+        for j in range(len(self.dport_id)-1):
+            print self.dport_id[0] + " , " + self.dport_id[j+1]
+            hoge = Topology.select().where((Topology.dport1 == self.dport_id[0]) & (Topology.dport2 == self.dport_id[j+1]))
             
             if hoge.exists():
                 print "no insert"
                 # <--- db update
-                topo = Topology.update(updated=time.time()).where((Topology.dport1 == self.dp[0]) & (Topology.dport2 == self.dp[1]))
+                topo = Topology.update(updated=time.time()).where((Topology.dport1 == self.dport_id[0]) & (Topology.dport2 == self.dport_id[1]))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
                 print "insert"
-                topo = Topology.insert(dport1=self.dp[0],dport2=self.dp[j+1],judge='H', updated=time.time())
+                topo = Topology.insert(dport1=self.dport_id[0],dport2=self.dport_id[j+1],judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
             
