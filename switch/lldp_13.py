@@ -202,7 +202,7 @@ class Switch13(app_manager.RyuApp):
                 # db insert --->
             
         # <--- db delete
-        Topology.delete().where((time.time() - Topology.updated) > 600).execute()
+        Topology.delete().where((time.time() - Topology.updated) > 20).execute()
         # ---> db delete
 
     def search_host(self, datapath, port):
@@ -214,23 +214,23 @@ class Switch13(app_manager.RyuApp):
             self.dport_id.append(sid)
         self.dport_id.sort()
 
-        for j in range(len(self.dport_id)-1):
-            print self.dport_id[0] + " , " + self.dport_id[j+1]
-            hoge = Topology.select().where((Topology.dport1 == self.dport_id[0]) & (Topology.dport2 == self.dport_id[j+1]))
+        for j in range(len(self.dport_id)):
+            print self.dport_id[j]
+            hoge = Topology.select().where(Topology.dport1 == self.dport_id[j])
             
             if hoge.exists():
-                print "no insert"
+                print "update"
                 # <--- db update
-                topo = Topology.update(updated=time.time()).where((Topology.dport1 == self.dport_id[0]) & (Topology.dport2 == self.dport_id[1]))
+                topo = Topology.update(updated=time.time()).where(Topology.dport1 == self.dport_id[j])
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
                 print "insert"
-                topo = Topology.insert(dport1=self.dport_id[0],dport2=self.dport_id[j+1],judge='H', updated=time.time())
+                topo = Topology.insert(dport1=self.dport_id[j],judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
             
             # <--- db delete
-        Topology.delete().where((time.time() - Topology.updated) > 600).execute()
+        Topology.delete().where((time.time() - Topology.updated) > 20).execute()
         # ---> db delete
