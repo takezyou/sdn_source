@@ -54,13 +54,13 @@ class Switch13(app_manager.RyuApp):
         self.mac_to_port = {}
         self.datapaths = []
         self.dport_id = []
+        self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
         self.dport = np.empty((0,2), int)
         self.hw_addr = '88:d7:f6:7a:34:90'
         self.ip_addr = '10.50.0.100'
         self.vlan_type=ether.ETH_TYPE_8021Q
         self.ipv4_type=ether.ETH_TYPE_IP
         self.lldp_type=ether.ETH_TYPE_LLDP
-        self.cfm_type=ether.ETH_TYPE_CFM
         self.lldp_thread = hub.spawn(self.lldp_loop)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
@@ -221,13 +221,13 @@ class Switch13(app_manager.RyuApp):
             if hoge.exists():
                 print "update"
                 # <--- db update
-                topo = Topology.update(updated=time.time()).where(Topology.dport1 == self.dport_id[j])
+                topo = Topology.update(updated=time.time()).where((Topology.dport1 == self.dport_id[j]) & (Topology.dport2 == self.hostname[j]))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
                 print "insert"
-                topo = Topology.insert(dport1=self.dport_id[j],judge='H', updated=time.time())
+                topo = Topology.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
             
