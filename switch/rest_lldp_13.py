@@ -50,38 +50,37 @@ class SwitchRest13(lldp_13.Switch13):
         self.switches[datapath.id] = datapath
         self.mac_to_port.setdefault(datapath.id, {})
     
-    # def set_push_vlan_flow(self, vlan, dpid, port1, port2):
-        # datapath = self.switches.get(000000000000000 + dpid)
-        # ofproto = datapath.ofproto
-        # parser = datapath.ofproto_parser
+    def set_push_vlan_flow(self, vlan, dpid, port1, port2):
+        datapath = self.switches.get(000000000000000 + dpid)
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
 
-        # vlan_vid=(vlan | ofproto.OFPVID_PRESENT)
-        # f = parser.OFPMatchField.make(ofproto.OXM_OF_VLAN_VID, vlan_vid)
-        # actions = [parser.OFPActionPushVlan(self.vlan_type),
-        #            parser.OFPActionSetField(f),
-        #            parser.OFPActionOutput(port2)]
-        # match = parser.OFPMatch(in_port=port1)
-        # self.add_flow(datapath, 1, match, actions)
+        f = parser.OFPMatchField.make(ofproto.OXM_OF_VLAN_VID, (vlan | ofproto.OFPVID_PRESENT))
+        actions = [parser.OFPActionPushVlan(self.vlan_type),
+                   parser.OFPActionSetField(f),
+                   parser.OFPActionOutput(port2)]
+        match = parser.OFPMatch(in_port=port1)
+        self.add_flow(datapath, 1, match, actions)
 
-        # actions = [parser.OFPActionPushVlan(self.vlan_type),
-        #            parser.OFPActionSetField(f),
-        #            parser.OFPActionOutput(port1)]
-        # match = parser.OFPMatch(in_port=port2)
+        actions = [parser.OFPActionPushVlan(self.vlan_type),
+                   parser.OFPActionSetField(f),
+                   parser.OFPActionOutput(port1)]
+        match = parser.OFPMatch(in_port=port2)
 
-        # self.add_flow(datapath, 1, match, actions)
+        self.add_flow(datapath, 1, match, actions)
     
     def set_pop_vlan_flow(self, vlan, dpid, port1, port2):
         datapath = self.switches.get(000000000000000 + dpid)
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        actions = [parser.OFPActionPopVlan(),
+        actions = [parser.OFPActionPopVlan(self.vlan_type),
                    parser.OFPActionOutput(port2)]
         match = parser.OFPMatch(in_port=port1, vlan_vid=(vlan | ofproto.OFPVID_PRESENT))
 
         self.add_flow(datapath, 1, match, actions)
 
-        actions = [parser.OFPActionPopVlan(),
+        actions = [parser.OFPActionPopVlan(self.vlan_type),
                    parser.OFPActionOutput(port1)]
         match = parser.OFPMatch(in_port=port2, vlan_vid=(vlan | ofproto.OFPVID_PRESENT))
 
@@ -136,5 +135,5 @@ class SwitchController(ControllerBase):
             if i % 2 != 0:
                 path_join = ",".join([path_list[i-1], path_list[i]])
                 path = re.split('[,-]',path_join)
-                # self.switch_app.set_push_vlan_flow(vlan, int(path[0]), int(path[1]), int(path[3]))
+                self.switch_app.set_push_vlan_flow(vlan, int(path[0]), int(path[1]), int(path[3]))
                 self.switch_app.set_pop_vlan_flow(vlan, int(path[0]), int(path[1]), int(path[3]))

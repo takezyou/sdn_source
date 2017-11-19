@@ -1,4 +1,7 @@
 import time
+import struct
+import logging
+from ryu.lib.mac import haddr_to_str
 
 from ryu.base import app_manager
 
@@ -44,6 +47,7 @@ class Topology(peewee.Model):
 
 # --->
 
+LOG = logging.getLogger(__name__)
 
 class Switch13(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -77,6 +81,69 @@ class Switch13(app_manager.RyuApp):
         self.add_flow(datapath, 0, match, actions)
 
         self.send_port_desc_stats_request(datapath)
+
+ # flow add s1
+        if datapath.id == 1:
+            # host1 host3
+            f = parser.OFPMatchField.make(ofproto.OXM_OF_VLAN_VID, (10 | ofproto.OFPVID_PRESENT))
+            actions = [parser.OFPActionPushVlan(),
+                       parser.OFPActionSetField(f),
+                       parser.OFPActionOutput(1)]
+            match = parser.OFPMatch(in_port=4)
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionPushVlan(),
+                       parser.OFPActionSetField(f),
+                       parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=1)
+
+            self.add_flow(datapath, 1, match, actions)
+
+            # actions = [parser.OFPActionPopVlan(self.vlan_type),
+            #            parser.OFPActionOutput(4)]
+            # match = parser.OFPMatch(in_port=1, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            # self.add_flow(datapath, 1, match, actions)
+
+            # actions = [parser.OFPActionPopVlan(self.vlan_type),
+            #        parser.OFPActionOutput(1)]
+            # match = parser.OFPMatch(in_port=4, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            # self.add_flow(datapath, 1, match, actions)
+
+
+        # flow add s2
+        if  datapath.id == 2:
+            # host1 host3
+            f = parser.OFPMatchField.make(ofproto.OXM_OF_VLAN_VID, (10 | ofproto.OFPVID_PRESENT))
+            actions = [parser.OFPActionPushVlan(self.vlan_type),
+                       parser.OFPActionSetField(f),
+                       parser.OFPActionOutput(2)]
+            match = parser.OFPMatch(in_port=4)
+
+            self.add_flow(datapath, 1, match, actions)
+
+            actions = [parser.OFPActionPushVlan(self.vlan_type),
+                       parser.OFPActionSetField(f),
+                       parser.OFPActionOutput(4)]
+            match = parser.OFPMatch(in_port=2)
+
+            self.add_flow(datapath, 1, match, actions)
+
+            # actions = [parser.OFPActionPopVlan(self.vlan_type),
+            #            parser.OFPActionOutput(4)]
+            # match = parser.OFPMatch(in_port=2, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            # self.add_flow(datapath, 1, match, actions)
+
+            # actions = [parser.OFPActionPopVlan(self.vlan_type),
+            #        parser.OFPActionOutput(2)]
+            # match = parser.OFPMatch(in_port=4, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
+
+            # self.add_flow(datapath, 1, match, actions)
+
+
     
     def lldp_loop(self):
         while True:
@@ -164,6 +231,9 @@ class Switch13(app_manager.RyuApp):
         datapath = msg.datapath
         port = msg.match['in_port']
         pkt = packet.Packet(data=msg.data)
+        dst, src, eth_type = struct.unpack_from('!6s6sH', buffer(msg.data), 0)
+        in_port = msg.match.fields[0].value
+
  
         pkt_ethernet = pkt.get_protocol(ethernet.ethernet)
         if not pkt_ethernet:
@@ -173,6 +243,13 @@ class Switch13(app_manager.RyuApp):
         if pkt_lldp:
             self.search_host(datapath, port)
             self.handle_lldp(datapath, port, pkt_lldp)
+        else:
+            LOG.info("----------------------------------------")
+            LOG.info("* PacketIn")
+            LOG.info("in_port=%d, eth_type: %s", in_port, hex(eth_type))
+            LOG.info("packet reason=%d buffer_id=%d", msg.reason, msg.buffer_id)
+            LOG.info("packet in datapath_id=%s src=%s dst=%s",
+                      msg.datapath.id, haddr_to_str(src), haddr_to_str(dst))
     
     def handle_lldp(self, datapath, port, pkt_lldp):
         timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
@@ -232,5 +309,5 @@ class Switch13(app_manager.RyuApp):
                 # db insert --->
             
             # <--- db delete
-        Topology.delete().where((time.time() - Topology.updated) > 20).execute()
+        Topology.delete().where((time.time() - Topology.updated) > 10).execute()
         # ---> db delete
