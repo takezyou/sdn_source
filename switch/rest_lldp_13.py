@@ -19,10 +19,12 @@ simple_switch_instance_name = 'switch_api_app'
 db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd="")
 
 class Vlans(peewee.Model):
-    vlan = peewee.IntegerField(primary_key=True)
+    vlanid = peewee.IntegerField(primary_key=True)
     start = peewee.CharField()
     end = peewee.CharField()
     path = peewee.CharField()
+    created_at = peewee.CharField()
+    updated_at = peewee.CharField()
 
     class Meta:
         database = db # this model uses the people database
@@ -122,7 +124,7 @@ class SwitchController(ControllerBase):
     def del_mac_table(self, req, **kwargs):
         vlan = kwargs['vlan']
 
-        v = Vlans.get(Vlans.vlan == vlan)
+        v = Vlans.get(Vlans.vlanid == vlan)
         s = v.start
         e = v.end
         port1 = s.split("-")
@@ -136,8 +138,8 @@ class SwitchController(ControllerBase):
         start = kwargs['start']
         end = kwargs['end']
 
-        s = Vlans.get(Vlan.start == start)
-        e = Vlans.get(Vlan.end == end)
+        s = Vlans.get(Vlans.start == start)
+        e = Vlans.get(Vlans.end == end)
 
         self.switch_app.del_flow(s.vlan)
 
@@ -146,7 +148,7 @@ class SwitchController(ControllerBase):
 
 
     def path_division(self, start, end):
-        vlan = start.vlan
+        vlan = start.vlanid
         path = start.path
         path_list = re.split('[|,]',path)
         path_join =[]
