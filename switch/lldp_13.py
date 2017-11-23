@@ -33,7 +33,7 @@ import MySQLdb
 
 db = peewee.MySQLDatabase("ryu_db", host="mat.ns.ie.u-ryukyu.ac.jp", port=3306, user="root", passwd="")
 
-class Topology(peewee.Model):
+class Topologies(peewee.Model):
     id = peewee.IntegerField()
     dport1 = peewee.CharField()
     dport2 = peewee.CharField()
@@ -207,22 +207,22 @@ class Switch13(app_manager.RyuApp):
                 sid2 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
             
             print sid1 + " , " + sid2
-            topo = Topology.select().where((Topology.dport1 == sid1) & (Topology.dport2 == sid2)) 
+            topo = Topologies.select().where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2)) 
             if topo.exists():
                 print "update"
                 # <--- db update
-                topo = Topology.update(delay=timestamp_diff,updated=time.time()).where((Topology.dport1 == sid1) & (Topology.dport2 == sid2))
+                topo = Topologies.update(delay=timestamp_diff,updated=time.time()).where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
                 print "insert"
-                topo = Topology.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=time.time())
+                topo = Topologies.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=time.time())
                 topo.execute()
                 # db insert --->
             
         # <--- db delete
-        Topology.delete().where((time.time() - Topology.updated) > 20).execute()
+        Topologies.delete().where((time.time() - Topologies.updated) > 20).execute()
         # ---> db delete
 
     def search_host(self, datapath, port):
@@ -236,21 +236,21 @@ class Switch13(app_manager.RyuApp):
 
         for j in range(len(self.dport_id)):
             print self.dport_id[j]
-            hoge = Topology.select().where(Topology.dport1 == self.dport_id[j])
+            hoge = Topologies.select().where(Topologies.dport1 == self.dport_id[j])
             
             if hoge.exists():
                 print "update"
                 # <--- db update
-                topo = Topology.update(updated=time.time()).where((Topology.dport1 == self.dport_id[j]) & (Topology.dport2 == self.hostname[j]))
+                topo = Topologies.update(updated=time.time()).where((Topologies.dport1 == self.dport_id[j]) & (Topologies.dport2 == self.hostname[j]))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
                 print "insert"
-                topo = Topology.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
+                topo = Topologies.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
             
             # <--- db delete
-        Topology.delete().where((time.time() - Topology.updated) > 10).execute()
+        Topologies.delete().where((time.time() - Topologies.updated) > 10).execute()
         # ---> db delete

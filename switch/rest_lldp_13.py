@@ -18,7 +18,7 @@ import peewee
 simple_switch_instance_name = 'switch_api_app'
 db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd="")
 
-class Vlan(peewee.Model):
+class Vlans(peewee.Model):
     vlan = peewee.IntegerField(primary_key=True)
     start = peewee.CharField()
     end = peewee.CharField()
@@ -112,8 +112,8 @@ class SwitchController(ControllerBase):
         start = kwargs['start']
         end = kwargs['end']
 
-        s = Vlan.get(Vlan.start == start)
-        e = Vlan.get(Vlan.end == end)
+        s = Vlans.get(Vlans.start == start)
+        e = Vlans.get(Vlans.end == end)
 
         if start == s.start and end == e.end:
             self.path_division(s, e)
@@ -122,7 +122,7 @@ class SwitchController(ControllerBase):
     def del_mac_table(self, req, **kwargs):
         vlan = kwargs['vlan']
 
-        v = Vlan.get(Vlan.vlan == vlan)
+        v = Vlans.get(Vlans.vlan == vlan)
         s = v.start
         e = v.end
         port1 = s.split("-")
@@ -136,8 +136,8 @@ class SwitchController(ControllerBase):
         start = kwargs['start']
         end = kwargs['end']
 
-        s = Vlan.get(Vlan.start == start)
-        e = Vlan.get(Vlan.end == end)
+        s = Vlans.get(Vlan.start == start)
+        e = Vlans.get(Vlan.end == end)
 
         self.switch_app.del_flow(s.vlan)
 
