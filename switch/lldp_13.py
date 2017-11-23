@@ -109,18 +109,31 @@ class Switch13(app_manager.RyuApp):
                                 match=match, instructions=inst)
         datapath.send_msg(mod)
     
-    def del_flow(self, vlan):
-        for dp in self.datapaths: 
+    def del_flow(self, vlan, port1, port2):
+        for dp in self.datapaths:
+                    
             ofproto = dp.ofproto
             parser = dp.ofproto_parser
 
             match = parser.OFPMatch(vlan_vid=(int(vlan) | ofproto.OFPVID_PRESENT))
 
-            # construct flow_mod message and send it.
             inst = []
             mod = parser.OFPFlowMod(datapath=dp, priority=1,
                                 command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
             dp.send_msg(mod)
+
+            match = parser.OFPMatch(in_port=int(port1))
+            inst = []
+            mod = parser.OFPFlowMod(datapath=dp, priority=1,
+                                command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
+            dp.send_msg(mod)
+
+            match = parser.OFPMatch(in_port=int(port2))
+            inst = []
+            mod = parser.OFPFlowMod(datapath=dp, priority=1,
+                                command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
+            dp.send_msg(mod)
+
 
     @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
     def port_desc_stats_reply_handler(self, ev):
@@ -180,14 +193,7 @@ class Switch13(app_manager.RyuApp):
         if pkt_lldp:
             self.search_host(datapath, port)
             self.handle_lldp(datapath, port, pkt_lldp)
-        else:
-            LOG.info("----------------------------------------")
-            LOG.info("* PacketIn")
-            LOG.info("in_port=%d, eth_type: %s", in_port, hex(eth_type))
-            LOG.info("packet reason=%d buffer_id=%d", msg.reason, msg.buffer_id)
-            LOG.info("packet in datapath_id=%s src=%s dst=%s",
-                      msg.datapath.id, haddr_to_str(src), haddr_to_str(dst))
-    
+
     def handle_lldp(self, datapath, port, pkt_lldp):
         timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
 
