@@ -75,76 +75,13 @@ class Switch13(app_manager.RyuApp):
 
         self.datapaths.append(datapath)
 
-        match = parser.OFPMatch()
+        match = parser.OFPMatch(eth_type=self.lldp_type)
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
 
-        self.add_flow(datapath, 0, match, actions)
+        self.add_flow(datapath, 1, match, actions)
 
         self.send_port_desc_stats_request(datapath)
 
- # flow add s1
-        if datapath.id == 1:
-            # host1 host3
-            f = parser.OFPMatchField.make(ofproto.OXM_OF_VLAN_VID, (10 | ofproto.OFPVID_PRESENT))
-            actions = [parser.OFPActionPushVlan(),
-                       parser.OFPActionSetField(f),
-                       parser.OFPActionOutput(1)]
-            match = parser.OFPMatch(in_port=4)
-
-            self.add_flow(datapath, 1, match, actions)
-
-            actions = [parser.OFPActionPushVlan(),
-                       parser.OFPActionSetField(f),
-                       parser.OFPActionOutput(4)]
-            match = parser.OFPMatch(in_port=1)
-
-            self.add_flow(datapath, 1, match, actions)
-
-            # actions = [parser.OFPActionPopVlan(self.vlan_type),
-            #            parser.OFPActionOutput(4)]
-            # match = parser.OFPMatch(in_port=1, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
-
-            # self.add_flow(datapath, 1, match, actions)
-
-            # actions = [parser.OFPActionPopVlan(self.vlan_type),
-            #        parser.OFPActionOutput(1)]
-            # match = parser.OFPMatch(in_port=4, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
-
-            # self.add_flow(datapath, 1, match, actions)
-
-
-        # flow add s2
-        if  datapath.id == 2:
-            # host1 host3
-            f = parser.OFPMatchField.make(ofproto.OXM_OF_VLAN_VID, (10 | ofproto.OFPVID_PRESENT))
-            actions = [parser.OFPActionPushVlan(self.vlan_type),
-                       parser.OFPActionSetField(f),
-                       parser.OFPActionOutput(2)]
-            match = parser.OFPMatch(in_port=4)
-
-            self.add_flow(datapath, 1, match, actions)
-
-            actions = [parser.OFPActionPushVlan(self.vlan_type),
-                       parser.OFPActionSetField(f),
-                       parser.OFPActionOutput(4)]
-            match = parser.OFPMatch(in_port=2)
-
-            self.add_flow(datapath, 1, match, actions)
-
-            # actions = [parser.OFPActionPopVlan(self.vlan_type),
-            #            parser.OFPActionOutput(4)]
-            # match = parser.OFPMatch(in_port=2, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
-
-            # self.add_flow(datapath, 1, match, actions)
-
-            # actions = [parser.OFPActionPopVlan(self.vlan_type),
-            #        parser.OFPActionOutput(2)]
-            # match = parser.OFPMatch(in_port=4, vlan_vid=(10 | ofproto.OFPVID_PRESENT))
-
-            # self.add_flow(datapath, 1, match, actions)
-
-
-    
     def lldp_loop(self):
         while True:
             self.insert_host()
