@@ -141,7 +141,10 @@ class SwitchController(ControllerBase):
         s = Vlans.get(Vlans.start == start)
         e = Vlans.get(Vlans.end == end)
 
-        self.switch_app.del_flow(s.vlan)
+        port1 = start.split("-")
+        port2 = end.split("-")
+
+        self.switch_app.del_flow(s.vlanid, port1[1], port2[1])
 
         if start == s.start and end == e.end:
             self.path_division(s, e)
