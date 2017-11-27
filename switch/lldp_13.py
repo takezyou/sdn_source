@@ -181,9 +181,8 @@ class Switch13(app_manager.RyuApp):
         datapath = msg.datapath
         port = msg.match['in_port']
         pkt = packet.Packet(data=msg.data)
-        dst, src, eth_type = struct.unpack_from('!6s6sH', buffer(msg.data), 0)
-        in_port = msg.match.fields[0].value
 
+        timestamp = time.time()
  
         pkt_ethernet = pkt.get_protocol(ethernet.ethernet)
         if not pkt_ethernet:
@@ -192,10 +191,10 @@ class Switch13(app_manager.RyuApp):
         pkt_lldp = pkt.get_protocol(lldp.lldp)
         if pkt_lldp:
             self.search_host(datapath, port)
-            self.handle_lldp(datapath, port, pkt_lldp)
+            self.handle_lldp(datapath, port, pkt_lldp, timestamp)
 
-    def handle_lldp(self, datapath, port, pkt_lldp):
-        timestamp_diff = time.time() - pkt_lldp.tlvs[3].timestamp
+    def handle_lldp(self, datapath, port, pkt_lldp, timestamp):
+        timestamp_diff = timestamp - pkt_lldp.tlvs[3].timestamp
 
         # <--- db 
         if datapath.id is not None:
@@ -206,18 +205,24 @@ class Switch13(app_manager.RyuApp):
                 sid1 = str(datapath.id) + "-" + str(port)
                 sid2 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
             
-            print sid1 + " , " + sid2
+            #print sid1 + " , " + sid2
             topo = Topologies.select().where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2)) 
             if topo.exists():
-                print "update"
+                #print "update"
                 # <--- db update
-                topo = Topologies.update(delay=timestamp_diff,updated=time.time()).where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2))
-                topo.execute()
+                if topo[0].updated == int(pkt_lldp.tlvs[3].timestamp):
+                    if topo[0].delay > timestamp_diff:
+                        topo = Topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2))
+                        topo.execute()
+                else:
+                    topo = Topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2))
+                    topo.execute()
+
                 # db update --->
             else:
                 # <--- db insert
-                print "insert"
-                topo = Topologies.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=time.time())
+                #print "insert"
+                topo = Topologies.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=pkt_lldp.tlvs[3].timestamp)
                 topo.execute()
                 # db insert --->
             
@@ -235,18 +240,18 @@ class Switch13(app_manager.RyuApp):
         self.dport_id.sort()
 
         for j in range(len(self.dport_id)):
-            print self.dport_id[j]
+            #print self.dport_id[j]
             hoge = Topologies.select().where(Topologies.dport1 == self.dport_id[j])
             
             if hoge.exists():
-                print "update"
+                #print "update"
                 # <--- db update
                 topo = Topologies.update(updated=time.time()).where((Topologies.dport1 == self.dport_id[j]) & (Topologies.dport2 == self.hostname[j]))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
-                print "insert"
+                #print "insert"
                 topo = Topologies.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
