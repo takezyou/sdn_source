@@ -17,7 +17,6 @@ from ryu.lib import hub
 
 from ryu.lib.packet import packet
 from ryu.lib.packet import vlan
-from ryu.lib.packet import cfm
 from ryu.lib.packet import lldp
 from ryu.lib.packet import ipv4
 from ryu.lib.packet import ethernet
@@ -58,10 +57,9 @@ class Switch13(app_manager.RyuApp):
         self.mac_to_port = {}
         self.datapaths = []
         self.dport_id = []
-        self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-        self.dport = np.empty((0,2), int)
-        self.hw_addr = '88:d7:f6:7a:34:90'
-        self.ip_addr = '10.50.0.100'
+        self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"] 
+        self.hw = '88:d7:f6:7a:34:90'
+        self.ip = '10.50.0.100'
         self.vlan_type=ether.ETH_TYPE_8021Q
         self.ipv4_type=ether.ETH_TYPE_IP
         self.lldp_type=ether.ETH_TYPE_LLDP
@@ -85,7 +83,6 @@ class Switch13(app_manager.RyuApp):
     def lldp_loop(self):
         while True:
             self.insert_host()
-            self.dport = np.empty((0,2), int)
             self.dport_id = []
             for dp in self.datapaths:
                 self.send_port_desc_stats_request(dp)
@@ -140,13 +137,13 @@ class Switch13(app_manager.RyuApp):
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
-        
+
         for stat in ev.msg.body:
             if stat.port_no < ofproto.OFPP_MAX:
-                self.dport = np.append(self.dport, np.array([[datapath.id, stat.port_no]]), axis=0)
                 self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr)
- 
-    
+                if stat.curr_speed > 1:
+                    self.dport_id.append(str(datapath.id) + "-" + str(stat.port_no))
+
     def send_lldp_packet (self, datapath, port_no, hw_addr):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -174,7 +171,6 @@ class Switch13(app_manager.RyuApp):
                                   data=data)
         datapath.send_msg(out)
     
-    
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         msg = ev.msg
@@ -190,7 +186,6 @@ class Switch13(app_manager.RyuApp):
  
         pkt_lldp = pkt.get_protocol(lldp.lldp)
         if pkt_lldp:
-            self.search_host(datapath, port)
             self.handle_lldp(datapath, port, pkt_lldp, timestamp)
 
     def handle_lldp(self, datapath, port, pkt_lldp, timestamp):
@@ -229,21 +224,21 @@ class Switch13(app_manager.RyuApp):
         # <--- db delete
         Topologies.delete().where((time.time() - Topologies.updated) > 20).execute()
         # ---> db delete
+    def switch_id(self):
+        switch = Topologies.select().where(Topologies.judge == "S")
+        if switch.exists():
+            for s in switch:
+                self.dport_id.remove(s.dport1)
+                self.dport_id.remove(s.dport2)
 
-    def search_host(self, datapath, port):
-        self.dport = np.delete(self.dport, np.where((self.dport[:,0]==datapath.id) & (self.dport[:,1]==port)), 0)
-    
     def insert_host(self):
-        for i in range(len(self.dport)):
-            sid = str(self.dport[i][0]) + "-" + str(self.dport[i][1])
-            self.dport_id.append(sid)
         self.dport_id.sort()
+        self.switch_id()
 
         for j in range(len(self.dport_id)):
-            #print self.dport_id[j]
-            hoge = Topologies.select().where(Topologies.dport1 == self.dport_id[j])
+            host = Topologies.select().where(Topologies.dport1 == self.dport_id[j])
             
-            if hoge.exists():
+            if host.exists():
                 #print "update"
                 # <--- db update
                 topo = Topologies.update(updated=time.time()).where((Topologies.dport1 == self.dport_id[j]) & (Topologies.dport2 == self.hostname[j]))
@@ -256,6 +251,6 @@ class Switch13(app_manager.RyuApp):
                 topo.execute()
                 # db insert --->
             
-            # <--- db delete
+        # <--- db delete
         Topologies.delete().where((time.time() - Topologies.updated) > 10).execute()
         # ---> db delete
