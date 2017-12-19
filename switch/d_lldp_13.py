@@ -32,7 +32,7 @@ import MySQLdb
 
 db = peewee.MySQLDatabase("ryu_db", host="mat.ns.ie.u-ryukyu.ac.jp", port=3306, user="root", passwd="")
 
-class Topologies(peewee.Model):
+class Visualization_topologies(peewee.Model):
     id = peewee.IntegerField()
     dport1 = peewee.CharField()
     dport2 = peewee.CharField()
@@ -201,31 +201,31 @@ class Switch13(app_manager.RyuApp):
                 sid2 = str(pkt_lldp.tlvs[0].chassis_id) + "-" + str(pkt_lldp.tlvs[1].port_id)
             
             #print sid1 + " , " + sid2
-            topo = Topologies.select().where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2)) 
+            topo = Visualization_topologies.select().where((Visualization_topologies.dport1 == sid1) & (Visualization_topologies.dport2 == sid2)) 
             if topo.exists():
                 #print "update"
                 # <--- db update
                 if topo[0].updated == int(pkt_lldp.tlvs[3].timestamp):
                     if topo[0].delay > timestamp_diff:
-                        topo = Topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2))
+                        topo = Visualization_topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Visualization_topologies.dport1 == sid1) & (Visualization_topologies.dport2 == sid2))
                         topo.execute()
                 else:
-                    topo = Topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Topologies.dport1 == sid1) & (Topologies.dport2 == sid2))
+                    topo = Visualization_topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Visualization_topologies.dport1 == sid1) & (Visualization_topologies.dport2 == sid2))
                     topo.execute()
 
                 # db update --->
             else:
                 # <--- db insert
                 #print "insert"
-                topo = Topologies.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=pkt_lldp.tlvs[3].timestamp)
+                topo = Visualization_topologies.insert(dport1=sid1,dport2=sid2,delay=timestamp_diff,judge='S',updated=pkt_lldp.tlvs[3].timestamp)
                 topo.execute()
                 # db insert --->
             
         # <--- db delete
-        Topologies.delete().where((time.time() - Topologies.updated) > 20).execute()
+        Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
         # ---> db delete
     def switch_id(self):
-        switch = Topologies.select().where(Topologies.judge == "S")
+        switch = Visualization_topologies.select().where(Visualization_topologies.judge == "S")
         if switch.exists():
             for s in switch:
                 self.dport_id.remove(s.dport1)
@@ -236,21 +236,21 @@ class Switch13(app_manager.RyuApp):
         # self.switch_id()
 
         for j in range(len(self.dport_id)):
-            host = Topologies.select().where(Topologies.dport1 == self.dport_id[j])
+            host = Visualization_topologies.select().where(Visualization_topologies.dport1 == self.dport_id[j])
             
             if host.exists():
                 #print "update"
                 # <--- db update
-                topo = Topologies.update(updated=time.time()).where((Topologies.dport1 == self.dport_id[j]) & (Topologies.dport2 == self.hostname[j]))
+                topo = Visualization_topologies.update(updated=time.time()).where((Visualization_topologies.dport1 == self.dport_id[j]) & (Visualization_topologies.dport2 == self.hostname[j]))
                 topo.execute()
                 # db update --->
             else:
                 # <--- db insert
                 #print "insert"
-                topo = Topologies.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
+                topo = Visualization_topologies.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
                 topo.execute()
                 # db insert --->
             
         # <--- db delete
-        Topologies.delete().where((time.time() - Topologies.updated) > 10).execute()
+        Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 10).execute()
         # ---> db delete
