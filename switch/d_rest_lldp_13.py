@@ -12,8 +12,10 @@ from ryu.ofproto import ofproto_v1_3
 
 from ryu.lib import dpid as dpid_lib
 from ryu.lib.ofctl_utils import str_to_int
+
 import re
 import peewee
+import networkx as nx
 
 simple_switch_instance_name = 'switch_api_app'
 db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd="")
@@ -25,6 +27,15 @@ class Visualization_vlans(peewee.Model):
     path = peewee.CharField()
     created_at = peewee.CharField()
     updated_at = peewee.CharField()
+
+    class Meta:
+        database = db # this model uses the people database
+
+class Visualization_route(peewee.Model):
+    id = peewee.IntegerField(primary_key=True)
+    start = peewee.CharField()
+    end = peewee.CharField()
+    route = peewee.TextField()
 
     class Meta:
         database = db # this model uses the people database
@@ -145,6 +156,17 @@ class SwitchController(ControllerBase):
         port2 = end.split("-")
 
         self.switch_app.del_flow(s.vlanid, port1[1], port2[1])
+
+        if start == s.start and end == e.end:
+            self.path_division(s, e)
+
+    @route('switch', '/auto/{start}/{end}/{vlanid}', methods=['GET'])
+    def add_mac_table(self, req, **kwargs):
+        start = kwargs['start']
+        end = kwargs['end']
+
+        s = Visualization_vlans.get(Visualization_vlans.start == start)
+        e = Visualization_vlans.get(Visualization_vlans.end == end)
 
         if start == s.start and end == e.end:
             self.path_division(s, e)

@@ -19,12 +19,14 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import vlan
 from ryu.lib.packet import lldp
 from ryu.lib.packet import ipv4
+from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
 
 from ryu import utils
 import time
 import numpy as np
+import itertools
 
 # <--- db declaration
 import peewee
@@ -40,10 +42,19 @@ class Visualization_topologies(peewee.Model):
     judge = peewee.CharField()
     updated = peewee.IntegerField()
 
-
     class Meta:
         database = db
 
+
+class Visualization_route(peewee.Model):
+    id = peewee.IntegerField(primary_key=True)
+    start = peewee.CharField()
+    end = peewee.CharField()
+    route = peewee.TextField()
+    updated = peewee.IntegerField()
+
+    class Meta:
+        database = db # this model uses the people database
 # --->
 
 LOG = logging.getLogger(__name__)
@@ -62,6 +73,7 @@ class Switch13(app_manager.RyuApp):
         self.ip = '10.50.0.100'
         self.vlan_type=ether.ETH_TYPE_8021Q
         self.ipv4_type=ether.ETH_TYPE_IP
+        self.arp_type=ether.ETH_TYPE_ARP
         self.lldp_type=ether.ETH_TYPE_LLDP
         self.lldp_thread = hub.spawn(self.lldp_loop)
 
@@ -78,6 +90,11 @@ class Switch13(app_manager.RyuApp):
 
         self.add_flow(datapath, 1, match, actions)
 
+        match = parser.OFPMatch(eth_type=self.lldp_type)
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
+
+        self.add_flow(datapath, 1, match, actions)
+
         self.send_port_desc_stats_request(datapath)
 
     def lldp_loop(self):
@@ -85,7 +102,7 @@ class Switch13(app_manager.RyuApp):
             self.insert_host()
             self.dport_id = []
             for dp in self.datapaths:
-                self.send_port_desc_stats_request(dp)
+                self.send_port_desc_stats_request(dp)  
             hub.sleep(10)
 
     def send_port_desc_stats_request(self, datapath):
@@ -224,12 +241,13 @@ class Switch13(app_manager.RyuApp):
         # <--- db delete
         Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
         # ---> db delete
-    def switch_id(self):
-        switch = Visualization_topologies.select().where(Visualization_topologies.judge == "S")
-        if switch.exists():
-            for s in switch:
-                self.dport_id.remove(s.dport1)
-                self.dport_id.remove(s.dport2)
+            
+    # def switch_id(self):
+    #     switch = Visualization_topologies.select().where(Visualization_topologies.judge == "S")
+    #     if switch.exists():
+    #         for s in switch:
+    #             self.dport_id.remove(s.dport1)
+    #             self.dport_id.remove(s.dport2)
 
     def insert_host(self):
         self.dport_id.sort()
@@ -251,6 +269,50 @@ class Switch13(app_manager.RyuApp):
                 topo.execute()
                 # db insert --->
             
-        # <--- db delete
+        self.insert_route()
         Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 10).execute()
-        # ---> db delete
+
+    def insert_route(self):
+        h = []
+        switch = Visualization_topologies.select().where(Visualization_topologies.judge == "S")
+        host = Visualization_topologies.select().where(Visualization_topologies.judge == "H")
+        if host.exists() and switch.exists():
+            for i in host:
+                h.append(i.dport1)
+                
+            for element in itertools.combinations(h, 2):
+                route = Visualization_route.select().where((Visualization_route.start == element[0]) & (Visualization_route.end == element[1]))
+                if route.exists():
+                    route_path = self.search_route(element[0],element[1], switch)
+                    route = Visualization_route.update(route=route_path, updated=time.time()).where((Visualization_route.start == element[0]) & (Visualization_route.end == element[1]))
+                    route.execute()
+                else:
+                    route_path = self.search_route(element[0],element[1], switch)
+                    route =Visualization_route.insert(start=element[0], end=element[1], route=route_path, updated=time.time())
+                    route.execute()
+
+        Visualization_route.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
+    
+    def search_route(self, start, end, switch):
+        dport = []
+        start = Visualization_topologies.select().where(Visualization_topologies.dport1 == start)
+        end = Visualization_topologies.select().where(Visualization_topologies.dport1 == end)
+        st = start[0].dport2 + "," + start[0].dport1
+        en = end[0].dport1 + "," + end[0].dport2
+        d1 = start[0].dport1
+        d2 = end[0].dport1
+        d1.split(",")
+        d2.split(",")
+
+        if  d1[0] == d2[0] :
+            route = st + "|" + en
+
+            return route
+        else:
+            for s in switch:
+                dport.append(s.dport1 + "," + s.dport2)
+
+            switch_path = '|'.join(dport)
+            route = st + "|" + switch_path + "|" + en
+
+            return route
