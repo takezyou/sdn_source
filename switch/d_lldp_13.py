@@ -241,7 +241,7 @@ class Switch13(app_manager.RyuApp):
         # <--- db delete
         Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
         # ---> db delete
-            
+
     # def switch_id(self):
     #     switch = Visualization_topologies.select().where(Visualization_topologies.judge == "S")
     #     if switch.exists():
@@ -288,7 +288,7 @@ class Switch13(app_manager.RyuApp):
                     route.execute()
                 else:
                     route_path = self.search_route(element[0],element[1], switch)
-                    route =Visualization_route.insert(start=element[0], end=element[1], route=route_path, updated=time.time())
+                    route = Visualization_route.insert(start=element[0], end=element[1], route=route_path, updated=time.time())
                     route.execute()
 
         Visualization_route.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()

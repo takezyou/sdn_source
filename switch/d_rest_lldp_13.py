@@ -1,4 +1,4 @@
-from ryu.app import lldp_13
+from ryu.app import d_lldp_13
 
 from webob import Response
 
@@ -13,12 +13,24 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib import dpid as dpid_lib
 from ryu.lib.ofctl_utils import str_to_int
 
+import subprocess
 import re
 import peewee
 import networkx as nx
 
 simple_switch_instance_name = 'switch_api_app'
 db = peewee.MySQLDatabase("ryu_db", host="10.50.0.100", port=3306, user="root", passwd="")
+
+class Visualization_topologies(peewee.Model):
+    id = peewee.IntegerField()
+    dport1 = peewee.CharField()
+    dport2 = peewee.CharField()
+    delay = peewee.FloatField()
+    judge = peewee.CharField()
+    updated = peewee.IntegerField()
+
+    class Meta:
+        database = db
 
 class Visualization_vlans(peewee.Model):
     vlanid = peewee.IntegerField(primary_key=True)
@@ -36,12 +48,13 @@ class Visualization_route(peewee.Model):
     start = peewee.CharField()
     end = peewee.CharField()
     route = peewee.TextField()
+    updated = peewee.IntegerField()
 
     class Meta:
         database = db # this model uses the people database
 
 
-class SwitchRest13(lldp_13.Switch13):
+class SwitchRest13(d_lldp_13.Switch13):
 
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
     _CONTEXTS = {
@@ -161,15 +174,14 @@ class SwitchController(ControllerBase):
             self.path_division(s, e)
 
     @route('switch', '/auto/{start}/{end}/{vlanid}', methods=['GET'])
-    def add_mac_table(self, req, **kwargs):
+    def auto_mac_table(self, req, **kwargs):
         start = kwargs['start']
         end = kwargs['end']
+        vlan = kwargs['vlanid']
 
-        s = Visualization_vlans.get(Visualization_vlans.start == start)
-        e = Visualization_vlans.get(Visualization_vlans.end == end)
-
-        if start == s.start and end == e.end:
-            self.path_division(s, e)
+        route = Visualization_route.select().where((Visualization_route.start == start) & (Visualization_route.end == end)) 
+        if route.exists():
+            self.dijkstra(route[0], vlan)
 
 
     def path_division(self, start, end):
@@ -191,3 +203,75 @@ class SwitchController(ControllerBase):
             for j in range(1, len(path_join)-1):
                 path = re.split('[,-]',path_join[j])
                 self.switch_app.set_vlan_flow(vlan, int(path[0]), int(path[1]), int(path[3]))
+    
+    def dijkstra(self, path, vlan):
+        path = path.route
+        route_list = re.split('[|,]',path)
+        path_join = []
+        path_route = []
+        if len(route_list) != 4: 
+            path_route.append(route_list[1])
+            Graph = nx.DiGraph()
+            node1 = re.split('[-]',route_list[1])
+            node2 = re.split('[-]',route_list[-2])
+            Graph.add_nodes_from([route_list[0], node1[0]])
+            Graph.add_edge(route_list[0], node1[0], weight=1)
+            Graph.add_nodes_from([node2[0],route_list[-1]])
+            Graph.add_edge(node2[0], route_list[-1], weight=1)
+
+            for i in range(2,len(route_list)-2):
+                if i % 2 != 0:
+                    path_join.append(",".join([route_list[i-1], route_list[i]]))
+
+            for i in range(len(path_join)):
+                node_edge = re.split('[-,]',path_join[i])
+                Graph.add_nodes_from([node_edge[0], node_edge[2]])
+                if node1[0] == node_edge[0]:
+                    Graph.add_edge(node_edge[0], node_edge[2], weight=1+1)
+                else:
+                    Graph.add_edge(node_edge[0], node_edge[2], weight=1+i)
+        
+            route_path = nx.dijkstra_path(Graph, source=route_list[0], target=route_list[-1])
+
+            for i in range(len(path_join)):
+                node_edge = re.split('[-,]',path_join[i])
+                for j in range(len(route_path)-1):
+                    if node_edge[0] == route_path[j] and node_edge[2] == route_path[j+1]:
+                        path_route.append(path_join[i])
+            
+            path_route.append(route_list[-2])
+            path = "|".join(path_route)
+
+            vlans = Visualization_vlans.select().where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
+            if vlans.exists():
+                vlans = Visualization_vlans.update(path=path).where((Visualization_vlans.start == route_list[1]) & (Visualization_topologies.end == route_list[-2]))
+                vlans.execute()
+
+                cmd = 'curl -X GET http://10.50.0.100:8080/add/', route_list[1] ,"/", route_list[-2]
+
+                subprocess.call('cmd')
+            else:
+                vlans = Visualization_vlans.insert(vlanid=vlan,start=route_list[1], end=route_list[-2], path=path)
+                vlans.execute()
+
+                cmd = 'curl -X GET http://10.50.0.100:8080/add/', route_list[1] ,"/", route_list[-2]
+
+                subprocess.call('cmd')
+        else:
+            vlans = Visualization_vlans.select().where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
+            if vlans.exists():
+                path = "|".join([route_list[1],route_list[-2]])
+                vlans = Visualization_vlans.update(path=path).where((Visualization_vlans.start == route_list[1]) & (Visualization_topologies.end == route_list[-2]))
+                vlans.execute()
+
+                cmd = 'curl -X GET http://10.50.0.100:8080/add/', route_list[1] ,"/", route_list[-2]
+
+                subprocess.call('cmd')
+            else:
+                path = "|".join([route_list[1],route_list[-2]])
+                vlans = Visualization_vlans.insert(vlanid=vlan,start=route_list[1], end=route_list[-2], path=path)
+                vlans.execute()
+
+                cmd = 'curl -X GET http://10.50.0.100:8080/add/', route_list[1] ,"/", route_list[-2]
+
+                subprocess.call('cmd')
