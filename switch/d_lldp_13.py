@@ -1,12 +1,11 @@
 import time
 import struct
 import logging
+
 from ryu.lib.mac import haddr_to_str
-
 from ryu.base import app_manager
-
 from ryu.controller import ofp_event
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 
 from ryu.ofproto import ofproto_v1_3
@@ -14,7 +13,6 @@ from ryu.ofproto import ether
 from ryu.ofproto import inet
 
 from ryu.lib import hub
-
 from ryu.lib.packet import packet
 from ryu.lib.packet import vlan
 from ryu.lib.packet import lldp
@@ -22,8 +20,9 @@ from ryu.lib.packet import ipv4
 from ryu.lib.packet import arp
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
-
 from ryu import utils
+import subprocess
+import re
 import time
 import numpy as np
 import itertools
@@ -31,6 +30,7 @@ import itertools
 # <--- db declaration
 import peewee
 import MySQLdb
+
 
 db = peewee.MySQLDatabase("ryu_db", host="mat.ns.ie.u-ryukyu.ac.jp", port=3306, user="root", passwd="")
 
@@ -41,10 +41,18 @@ class Visualization_topologies(peewee.Model):
     delay = peewee.FloatField()
     judge = peewee.CharField()
     updated = peewee.IntegerField()
-
     class Meta:
         database = db
 
+class Visualization_vlans(peewee.Model):
+    vlanid = peewee.IntegerField(primary_key=True)
+    start = peewee.CharField()
+    end = peewee.CharField()
+    path = peewee.CharField()
+    created_at = peewee.CharField()
+    updated_at = peewee.CharField()
+    class Meta:
+        database = db 
 
 class Visualization_route(peewee.Model):
     id = peewee.IntegerField(primary_key=True)
@@ -52,14 +60,13 @@ class Visualization_route(peewee.Model):
     end = peewee.CharField()
     route = peewee.TextField()
     updated = peewee.IntegerField()
-
     class Meta:
-        database = db # this model uses the people database
+        database = db
+
 # --->
-
 LOG = logging.getLogger(__name__)
-
 class Switch13(app_manager.RyuApp):
+
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
@@ -82,23 +89,21 @@ class Switch13(app_manager.RyuApp):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
         self.datapaths.append(datapath)
 
         match = parser.OFPMatch(eth_type=self.lldp_type)
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
-
         self.add_flow(datapath, 1, match, actions)
 
         match = parser.OFPMatch(eth_type=self.lldp_type)
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
-
         self.add_flow(datapath, 1, match, actions)
 
         self.send_port_desc_stats_request(datapath)
 
     def lldp_loop(self):
         while True:
+            self.connection()
             self.insert_host()
             self.dport_id = []
             for dp in self.datapaths:
@@ -108,7 +113,6 @@ class Switch13(app_manager.RyuApp):
     def send_port_desc_stats_request(self, datapath):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
         req = parser.OFPPortDescStatsRequest(datapath, 0, ofproto.OFPP_ANY)
         datapath.send_msg(req)
 
@@ -128,33 +132,27 @@ class Switch13(app_manager.RyuApp):
                     
             ofproto = dp.ofproto
             parser = dp.ofproto_parser
-
             match = parser.OFPMatch(vlan_vid=(int(vlan) | ofproto.OFPVID_PRESENT))
-
             inst = []
             mod = parser.OFPFlowMod(datapath=dp, priority=1,
                                 command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
             dp.send_msg(mod)
-
             match = parser.OFPMatch(in_port=int(port1))
             inst = []
             mod = parser.OFPFlowMod(datapath=dp, priority=1,
                                 command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
             dp.send_msg(mod)
-
             match = parser.OFPMatch(in_port=int(port2))
             inst = []
             mod = parser.OFPFlowMod(datapath=dp, priority=1,
                                 command=ofproto.OFPFC_DELETE, out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY, match=match, instructions=inst)
             dp.send_msg(mod)
 
-
     @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
     def port_desc_stats_reply_handler(self, ev):
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
-
         for stat in ev.msg.body:
             if stat.port_no < ofproto.OFPP_MAX:
                 self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr)
@@ -164,9 +162,7 @@ class Switch13(app_manager.RyuApp):
     def send_lldp_packet (self, datapath, port_no, hw_addr):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
         timestamp = time.time()
-
         pkt = packet.Packet()
         pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr, dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
  
@@ -179,7 +175,6 @@ class Switch13(app_manager.RyuApp):
         pkt.add_protocol(lldp.lldp(tlvs))
         pkt.serialize()
         data = pkt.data
-
         actions = [parser.OFPActionOutput(port_no)]
         out = parser.OFPPacketOut(datapath=datapath,
                                   buffer_id=ofproto.OFP_NO_BUFFER,
@@ -194,7 +189,6 @@ class Switch13(app_manager.RyuApp):
         datapath = msg.datapath
         port = msg.match['in_port']
         pkt = packet.Packet(data=msg.data)
-
         timestamp = time.time()
  
         pkt_ethernet = pkt.get_protocol(ethernet.ethernet)
@@ -207,7 +201,6 @@ class Switch13(app_manager.RyuApp):
 
     def handle_lldp(self, datapath, port, pkt_lldp, timestamp):
         timestamp_diff = timestamp - pkt_lldp.tlvs[3].timestamp
-
         # <--- db 
         if datapath.id is not None:
             if int(datapath.id) > int(pkt_lldp.tlvs[0].chassis_id):
@@ -229,7 +222,6 @@ class Switch13(app_manager.RyuApp):
                 else:
                     topo = Visualization_topologies.update(delay=timestamp_diff,updated=pkt_lldp.tlvs[3].timestamp).where((Visualization_topologies.dport1 == sid1) & (Visualization_topologies.dport2 == sid2))
                     topo.execute()
-
                 # db update --->
             else:
                 # <--- db insert
@@ -252,7 +244,6 @@ class Switch13(app_manager.RyuApp):
     def insert_host(self):
         self.dport_id.sort()
         # self.switch_id()
-
         for j in range(len(self.dport_id)):
             host = Visualization_topologies.select().where(Visualization_topologies.dport1 == self.dport_id[j])
             
@@ -290,7 +281,6 @@ class Switch13(app_manager.RyuApp):
                     route_path = self.search_route(element[0],element[1], switch)
                     route = Visualization_route.insert(start=element[0], end=element[1], route=route_path, updated=time.time())
                     route.execute()
-
         Visualization_route.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
     
     def search_route(self, start, end, switch):
@@ -303,16 +293,35 @@ class Switch13(app_manager.RyuApp):
         d2 = end[0].dport1
         d1.split(",")
         d2.split(",")
-
         if  d1[0] == d2[0] :
             route = st + "|" + en
-
             return route
         else:
             for s in switch:
                 dport.append(s.dport1 + "," + s.dport2)
-
             switch_path = '|'.join(dport)
             route = st + "|" + switch_path + "|" + en
-
             return route
+
+    def connection(self):
+        path_switch = []
+        switch = Visualization_topologies.select().where(Visualization_topologies.judge == "S")
+        if switch.exists():
+            for s in switch:
+                path_switch.append(s.dport1)
+                path_switch.append(s.dport2)
+                vlans = Visualization_vlans.select()
+            for v in vlans:
+                i = []
+                path = re.split('[|,]',v.path)
+                path.remove(v.start)
+                path.remove(v.end)
+                for p in path:
+                    for ps in path_switch:
+                        if p == ps:
+                            i.append(ps)
+
+                if len(i) < 2:
+                    cmd = "curl -X GET http://10.50.0.100:8080/auto/" + v.start + "/" + v.end + "/" + str(v.vlanid)
+                
+                    subprocess.call(cmd, shell=True)

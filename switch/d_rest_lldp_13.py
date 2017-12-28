@@ -179,6 +179,10 @@ class SwitchController(ControllerBase):
         end = kwargs['end']
         vlan = kwargs['vlanid']
 
+        cmd = "curl -X GET http://10.50.0.100:8080/del/" + str(vlan)
+
+        subprocess.call(cmd, shell=True)
+
         route = Visualization_route.select().where((Visualization_route.start == start) & (Visualization_route.end == end)) 
         if route.exists():
             self.dijkstra(route[0], vlan)
@@ -229,17 +233,19 @@ class SwitchController(ControllerBase):
                 if node1[0] == node_edge[0]:
                     Graph.add_edge(node_edge[0], node_edge[2], weight=1+1)
                 else:
-                    Graph.add_edge(node_edge[0], node_edge[2], weight=1+i)
-        
+                    Graph.add_edge(node_edge[2], node_edge[0], weight=2+i)
+
             route_path = nx.dijkstra_path(Graph, source=route_list[0], target=route_list[-1])
 
             for i in range(len(path_join)):
                 node_edge = re.split('[-,]',path_join[i])
                 for j in range(len(route_path)-1):
-                    if node_edge[0] == route_path[j] and node_edge[2] == route_path[j+1]:
+                    print route_path[j], route_path[j+1]
+                    if (node_edge[0] == route_path[j] and node_edge[2] == route_path[j+1]) or (node_edge[0] == route_path[j+1] and node_edge[2] == route_path[j]):
                         path_route.append(path_join[i])
             
             path_route.append(route_list[-2])
+            print path_route
             path = "|".join(path_route)
 
             vlans = Visualization_vlans.select().where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
