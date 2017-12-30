@@ -86,7 +86,7 @@ class SwitchRest13(d_lldp_13.Switch13):
                    parser.OFPActionSetField(f),
                    parser.OFPActionOutput(port2)]
         match = parser.OFPMatch(in_port=port1)
-        self.add_flow(datapath, 1, match, actions)
+        self.add_flow(datapath, 1, match, actions, vlan)
 
         actions = [parser.OFPActionPopVlan(self.vlan_type),
                    parser.OFPActionOutput(port1)]
@@ -178,8 +178,10 @@ class SwitchController(ControllerBase):
         start = kwargs['start']
         end = kwargs['end']
         vlan = kwargs['vlanid']
-
-        cmd = "curl -X GET http://10.50.0.100:8080/del/" + str(vlan)
+        
+        vlans = Visualization_vlans.select().where((Visualization_vlans.start == start) & (Visualization_vlans.end == end))
+        if vlans.exists():
+            cmd = "curl -X GET http://10.50.0.100:8080/del/" + str(vlan)
 
         subprocess.call(cmd, shell=True)
 

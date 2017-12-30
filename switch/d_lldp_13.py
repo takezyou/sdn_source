@@ -7,12 +7,14 @@ from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
+from ryu.controller import dpset
 
 from ryu.ofproto import ofproto_v1_3
 from ryu.ofproto import ether
 from ryu.ofproto import inet
 
 from ryu.lib import hub
+from ryu.lib import dpid as dpid_lib
 from ryu.lib.packet import packet
 from ryu.lib.packet import vlan
 from ryu.lib.packet import lldp
@@ -22,7 +24,7 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
 from ryu import utils
 import subprocess
-import re4
+import re
 import time
 import numpy as np
 import itertools
@@ -63,6 +65,14 @@ class Visualization_route(peewee.Model):
     class Meta:
         database = db
 
+class Visualization_datapath(peewee.Model):
+    id = peewee.IntegerField()
+    datapath = peewee.TextField()
+    object_datapath = peewee.TextField()
+
+    class Meta:
+        database = db
+
 # --->
 LOG = logging.getLogger(__name__)
 class Switch13(app_manager.RyuApp):
@@ -75,6 +85,7 @@ class Switch13(app_manager.RyuApp):
         self.mac_to_port = {}
         self.datapaths = []
         self.dport_id = []
+        self.table = 0
         self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"] 
         self.hw = '88:d7:f6:7a:34:90'
         self.ip = '10.50.0.100'
@@ -104,17 +115,44 @@ class Switch13(app_manager.RyuApp):
     def lldp_loop(self):
         while True:
             self.connection()
-            self.insert_host()
+            # self.insert_host()
             self.dport_id = []
             for dp in self.datapaths:
-                self.send_port_desc_stats_request(dp)  
+                self.send_port_desc_stats_request(dp)
+                self.insert_route()
             hub.sleep(10)
+
+    @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
+    def handler_datapath(self, ev):
+        if ev.enter:
+            self.regist(ev.dp)
+        else:
+            self.unregist(ev.dp)
 
     def send_port_desc_stats_request(self, datapath):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         req = parser.OFPPortDescStatsRequest(datapath, 0, ofproto.OFPP_ANY)
         datapath.send_msg(req)
+
+    def regist(self, dp):
+        dpid_str = dpid_lib.dpid_to_str(dp.id)
+        datapath = Visualization_datapath.select().where(Visualization_datapath.datapath == dpid_str) 
+        if not datapath.exists():
+            datapath = Visualization_datapath.insert(datapath=dpid_str)
+            datapath.execute()
+        object_datapath = Visualization_datapath.select().where(Visualization_datapath.object_datapath == dp) 
+        if not datapath.exists():
+            datapath = Visualization_datapath.insert(object_datapath=dp)
+            datapath.execute()
+        
+        cmd = "curl -X PUT -d 'tcp:10.50.0.100' http://10.50.0.100:8080/v1.0/conf/switches/" + datapath[0].datapath + "/ovsdb_addr"
+        subprocess.call(cmd, shell=True)
+    
+    def unregist(self, dp):
+        dpid_str = dpid_lib.dpid_to_str(dp.id)
+        Visualization_datapath.delete().where(Visualization_datapath.datapath==dpid_str).execute()
+        Visualization_datapath.delete().where(Visualization_datapath.object_datapath==dp).execute()
 
     # add flow
     def add_flow(self, datapath, priority, match, actions):
@@ -124,7 +162,7 @@ class Switch13(app_manager.RyuApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                match=match, instructions=inst)
+                                match=match, instructions=inst, table_id=1)
         datapath.send_msg(mod)
     
     def del_flow(self, vlan, port1, port2):
@@ -157,7 +195,16 @@ class Switch13(app_manager.RyuApp):
             if stat.port_no < ofproto.OFPP_MAX:
                 self.send_lldp_packet(datapath, stat.port_no, stat.hw_addr)
                 if stat.curr_speed > 1:
-                    self.dport_id.append(str(datapath.id) + "-" + str(stat.port_no))
+                    dport = str(datapath.id) + "-" + str(stat.port_no)
+                    host = Visualization_topologies.select().where(Visualization_topologies.dport1 == dport)
+                    if host.exists():
+                        topo = Visualization_topologies.update(updated=time.time()).where((Visualization_topologies.dport1 == dport) & (Visualization_topologies.dport2 == stat.name))
+                        topo.execute()
+                    else:
+                        topo = Visualization_topologies.insert(dport1=dport, dport2=stat.name, judge='H', updated=time.time())
+                        topo.execute()
+                Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 10).execute()
+                    # self.dport_id.append(str(datapath.id) + "-" + str(stat.port_no))
 
     def send_lldp_packet (self, datapath, port_no, hw_addr):
         ofproto = datapath.ofproto
@@ -241,27 +288,27 @@ class Switch13(app_manager.RyuApp):
     #             self.dport_id.remove(s.dport1)
     #             self.dport_id.remove(s.dport2)
 
-    def insert_host(self):
-        self.dport_id.sort()
-        # self.switch_id()
-        for j in range(len(self.dport_id)):
-            host = Visualization_topologies.select().where(Visualization_topologies.dport1 == self.dport_id[j])
+    # def insert_host(self):
+    #     self.dport_id.sort()
+    #     # self.switch_id()
+    #     for j in range(len(self.dport_id)):
+    #         host = Visualization_topologies.select().where(Visualization_topologies.dport1 == self.dport_id[j])
             
-            if host.exists():
-                #print "update"
-                # <--- db update
-                topo = Visualization_topologies.update(updated=time.time()).where((Visualization_topologies.dport1 == self.dport_id[j]) & (Visualization_topologies.dport2 == self.hostname[j]))
-                topo.execute()
-                # db update --->
-            else:
-                # <--- db insert
-                #print "insert"
-                topo = Visualization_topologies.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
-                topo.execute()
-                # db insert --->
+    #         if host.exists():
+    #             #print "update"
+    #             # <--- db update
+    #             topo = Visualization_topologies.update(updated=time.time()).where((Visualization_topologies.dport1 == self.dport_id[j]) & (Visualization_topologies.dport2 == self.hostname[j]))
+    #             topo.execute()
+    #             # db update --->
+    #         else:
+    #             # <--- db insert
+    #             #print "insert"
+    #             topo = Visualization_topologies.insert(dport1=self.dport_id[j], dport2=self.hostname[j], judge='H', updated=time.time())
+    #             topo.execute()
+    #             # db insert --->
             
-        self.insert_route()
-        Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 10).execute()
+    #     self.insert_route()
+    #     Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 10).execute()
 
     def insert_route(self):
         h = []
