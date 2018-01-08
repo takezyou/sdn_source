@@ -53,6 +53,7 @@ class Visualization_vlans(peewee.Model):
     path = peewee.CharField()
     created_at = peewee.CharField()
     updated_at = peewee.CharField()
+    path_length = peewee.IntegerField()
     class Meta:
         database = db 
 
@@ -141,13 +142,13 @@ class Switch13(app_manager.RyuApp):
         if not datapath.exists():
             datapath = Visualization_datapath.insert(datapath=dpid_str)
             datapath.execute()
-        object_datapath = Visualization_datapath.select().where(Visualization_datapath.object_datapath == dp) 
-        if not datapath.exists():
-            datapath = Visualization_datapath.insert(object_datapath=dp)
-            datapath.execute()
+        # object_datapath = Visualization_datapath.select().where(Visualization_datapath.object_datapath == dp) 
+        # if not datapath.exists():
+        #     datapath = Visualization_datapath.insert(object_datapath=dp)
+        #     datapath.execute()
         
-        cmd = "curl -X PUT -d 'tcp:10.50.0.100' http://10.50.0.100:8080/v1.0/conf/switches/" + datapath[0].datapath + "/ovsdb_addr"
-        subprocess.call(cmd, shell=True)
+        # cmd = "curl -X PUT -d 'tcp:10.50.0.100' http://10.50.0.100:8080/v1.0/conf/switches/" + datapath[0].datapath + "/ovsdb_addr"
+        # subprocess.call(cmd, shell=True)
     
     def unregist(self, dp):
         dpid_str = dpid_lib.dpid_to_str(dp.id)
@@ -162,7 +163,7 @@ class Switch13(app_manager.RyuApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
-                                match=match, instructions=inst, table_id=1)
+                                match=match, instructions=inst)
         datapath.send_msg(mod)
     
     def del_flow(self, vlan, port1, port2):
@@ -360,6 +361,7 @@ class Switch13(app_manager.RyuApp):
                 vlans = Visualization_vlans.select()
             for v in vlans:
                 i = []
+                path_length = v.path_length
                 path = re.split('[|,]',v.path)
                 path.remove(v.start)
                 path.remove(v.end)
@@ -368,7 +370,7 @@ class Switch13(app_manager.RyuApp):
                         if p == ps:
                             i.append(ps)
 
-                if len(i) < 2:
+                if  len(i) < path_length:
                     cmd = "curl -X GET http://10.50.0.100:8080/auto/" + v.start + "/" + v.end + "/" + str(v.vlanid)
                 
                     subprocess.call(cmd, shell=True)

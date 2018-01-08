@@ -39,6 +39,7 @@ class Visualization_vlans(peewee.Model):
     path = peewee.CharField()
     created_at = peewee.CharField()
     updated_at = peewee.CharField()
+    path_length = peewee.IntegerField()
 
     class Meta:
         database = db # this model uses the people database
@@ -86,7 +87,7 @@ class SwitchRest13(d_lldp_13.Switch13):
                    parser.OFPActionSetField(f),
                    parser.OFPActionOutput(port2)]
         match = parser.OFPMatch(in_port=port1)
-        self.add_flow(datapath, 1, match, actions, vlan)
+        self.add_flow(datapath, 1, match, actions)
 
         actions = [parser.OFPActionPopVlan(self.vlan_type),
                    parser.OFPActionOutput(port1)]
@@ -183,7 +184,7 @@ class SwitchController(ControllerBase):
         if vlans.exists():
             cmd = "curl -X GET http://10.50.0.100:8080/del/" + str(vlan)
 
-        subprocess.call(cmd, shell=True)
+            subprocess.call(cmd, shell=True)
 
         route = Visualization_route.select().where((Visualization_route.start == start) & (Visualization_route.end == end)) 
         if route.exists():
@@ -242,24 +243,26 @@ class SwitchController(ControllerBase):
             for i in range(len(path_join)):
                 node_edge = re.split('[-,]',path_join[i])
                 for j in range(len(route_path)-1):
-                    print route_path[j], route_path[j+1]
                     if (node_edge[0] == route_path[j] and node_edge[2] == route_path[j+1]) or (node_edge[0] == route_path[j+1] and node_edge[2] == route_path[j]):
                         path_route.append(path_join[i])
             
             path_route.append(route_list[-2])
-            print path_route
             path = "|".join(path_route)
+            path_length = re.split('[|,]',path)
+            path_length.remove(path_length[0])
+            path_length.remove(path_length[-1])
 
             vlans = Visualization_vlans.select().where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
             if vlans.exists():
-                vlans = Visualization_vlans.update(path=path).where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
+                vlans = Visualization_vlans.update(path=path,path_length = len(path_length)).where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
                 vlans.execute()
 
                 cmd = "curl -X GET http://10.50.0.100:8080/add/" + route_list[1] + "/" + route_list[-2]
+                
 
                 subprocess.call(cmd, shell=True)
             else:
-                vlans = Visualization_vlans.insert(vlanid=vlan,start=route_list[1], end=route_list[-2], path=path)
+                vlans = Visualization_vlans.insert(vlanid=vlan,start=route_list[1], end=route_list[-2], path=path, path_length = len(path_length))
                 vlans.execute()
 
                 cmd = "curl -X GET http://10.50.0.100:8080/add/" + route_list[1] +  "/"  +route_list[-2]
@@ -270,7 +273,7 @@ class SwitchController(ControllerBase):
             vlans = Visualization_vlans.select().where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
             if vlans.exists():
                 path = "|".join([route_list[1],route_list[-2]])
-                vlans = Visualization_vlans.update(path=path).where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
+                vlans = Visualization_vlans.update(path=path, path_length = len(path_length)).where((Visualization_vlans.start == route_list[1]) & (Visualization_vlans.end == route_list[-2]))
                 vlans.execute()
 
                 cmd = "curl -X GET http://10.50.0.100:8080/add/" + route_list[1] + "/" + route_list[-2]
@@ -278,7 +281,7 @@ class SwitchController(ControllerBase):
                 subprocess.call(cmd, shell=True)
             else:
                 path = "|".join([route_list[1],route_list[-2]])
-                vlans = Visualization_vlans.insert(vlanid=vlan,start=route_list[1], end=route_list[-2], path=path)
+                vlans = Visualization_vlans.insert(vlanid=vlan,start=route_list[1], end=route_list[-2], path=path, path_length = len(path_length))
                 vlans.execute()
 
                 cmd = "curl -X GET http://10.50.0.100:8080/add/" + route_list[1] + "/" + route_list[-2]
