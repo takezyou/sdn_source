@@ -47,7 +47,7 @@ class Visualization_topologies(peewee.Model):
         database = db
 
 class Visualization_vlans(peewee.Model):
-    vlanid = peewee.IntegerField(primary_key=True)
+    id = peewee.IntegerField(primary_key=True)
     start = peewee.CharField()
     end = peewee.CharField()
     path = peewee.CharField()
@@ -103,13 +103,18 @@ class Switch13(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         self.datapaths.append(datapath)
 
-        match = parser.OFPMatch(eth_type=self.lldp_type)
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
-        self.add_flow(datapath, 1, match, actions)
+        # match = parser.OFPMatch(eth_type=self.lldp_type)
+        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
+        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        # mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
+        # datapath.send_msg(mod)
 
-        match = parser.OFPMatch(eth_type=self.lldp_type)
+        match = parser.OFPMatch(eth_type=self.arp_type)
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
-        self.add_flow(datapath, 1, match, actions)
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
+        datapath.send_msg(mod)
+
 
         self.send_port_desc_stats_request(datapath)
 
@@ -142,13 +147,13 @@ class Switch13(app_manager.RyuApp):
         if not datapath.exists():
             datapath = Visualization_datapath.insert(datapath=dpid_str)
             datapath.execute()
-        # object_datapath = Visualization_datapath.select().where(Visualization_datapath.object_datapath == dp) 
-        # if not datapath.exists():
-        #     datapath = Visualization_datapath.insert(object_datapath=dp)
-        #     datapath.execute()
+        object_datapath = Visualization_datapath.select().where(Visualization_datapath.object_datapath == dp) 
+        if not datapath.exists():
+            datapath = Visualization_datapath.insert(object_datapath=dp)
+            datapath.execute()
         
-        # cmd = "curl -X PUT -d 'tcp:10.50.0.100' http://10.50.0.100:8080/v1.0/conf/switches/" + datapath[0].datapath + "/ovsdb_addr"
-        # subprocess.call(cmd, shell=True)
+        cmd = """curl -X PUT -d '""' http://10.50.0.100:8080/v1.0/conf/switches/""" + datapath[0].datapath + "/ovsdb_addr"
+        subprocess.call(cmd, shell=True)
     
     def unregist(self, dp):
         dpid_str = dpid_lib.dpid_to_str(dp.id)
@@ -162,7 +167,7 @@ class Switch13(app_manager.RyuApp):
  
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
-        mod = parser.OFPFlowMod(datapath=datapath, priority=priority,
+        mod = parser.OFPFlowMod(table_id=1,datapath=datapath, priority=priority,
                                 match=match, instructions=inst)
         datapath.send_msg(mod)
     
