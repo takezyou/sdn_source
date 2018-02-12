@@ -174,19 +174,21 @@ class SwitchController(ControllerBase):
         if start == s.start and end == e.end:
             self.path_division(s, e)
 
-    @route('switch', '/auto/{start}/{end}/{vlanid}', methods=['GET'])
+    @route('switch', '/auto/{host_name1}/{host_name2}/{vlanid}', methods=['GET'])
     def auto_mac_table(self, req, **kwargs):
-        start = kwargs['start']
-        end = kwargs['end']
+        host_name1 = kwargs['host_name1']
+        host_name2 = kwargs['host_name2']
         vlan = kwargs['vlanid']
+        start = Visualization_topologies.get(Visualization_topologies.dport2 == host_name1)
+        end = Visualization_topologies.get(Visualization_topologies.dport2 == host_name2)
         
-        vlans = Visualization_vlans.select().where((Visualization_vlans.start == start) & (Visualization_vlans.end == end))
+        vlans = Visualization_vlans.select().where((Visualization_vlans.start == start.dport1) & (Visualization_vlans.end == end.dport1))
         if vlans.exists():
             cmd = "curl -X GET http://10.50.0.100:8080/del/" + str(vlan)
 
             subprocess.call(cmd, shell=True)
 
-        route = Visualization_route.select().where((Visualization_route.start == start) & (Visualization_route.end == end)) 
+        route = Visualization_route.select().where((Visualization_route.start == start.dport1) & (Visualization_route.end == end.dport1)) 
         if route.exists():
             self.dijkstra(route[0], vlan)
 
@@ -287,3 +289,8 @@ class SwitchController(ControllerBase):
                 cmd = "curl -X GET http://10.50.0.100:8080/add/" + route_list[1] + "/" + route_list[-2]
 
                 subprocess.call(cmd, shell=True)
+        
+    @route('switch', '/benchmark', methods=['GET'])
+    def benchmark(self, req, **kwargs):
+
+        return Response(status=200)

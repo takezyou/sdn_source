@@ -109,18 +109,18 @@ class Switch13(app_manager.RyuApp):
         # mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
         # datapath.send_msg(mod)
 
-        match = parser.OFPMatch(eth_type=self.arp_type)
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
-        mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
-        datapath.send_msg(mod)
+        # match = parser.OFPMatch(eth_type=self.arp_type)
+        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
+        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        # mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
+        # datapath.send_msg(mod)
 
 
         self.send_port_desc_stats_request(datapath)
 
     def lldp_loop(self):
         while True:
-            self.connection()
+            # self.connection()
             # self.insert_host()
             self.dport_id = []
             for dp in self.datapaths:
@@ -375,7 +375,10 @@ class Switch13(app_manager.RyuApp):
                         if p == ps:
                             i.append(ps)
 
+                host_name1 = Visualization_topologies.get(Visualization_topologies.dport1 == v.start)
+                host_name2 = Visualization_topologies.get(Visualization_topologies.dport1 == v.end)
+                print host_name1.dport2,host_name2.dport2
                 if  len(i) < path_length:
-                    cmd = "curl -X GET http://10.50.0.100:8080/auto/" + v.start + "/" + v.end + "/" + str(v.vlanid)
+                    cmd = "curl -X GET http://10.50.0.100:8080/auto/" + host_name1.dport2 + "/" + host_name2.dport2 + "/" + str(v.vlanid)
                 
                     subprocess.call(cmd, shell=True)

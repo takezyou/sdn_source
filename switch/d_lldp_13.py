@@ -87,6 +87,7 @@ class Switch13(app_manager.RyuApp):
         self.datapaths = []
         self.dport_id = []
         self.table = 0
+        self.test_time = 0
         # self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"] 
         self.hw = '88:d7:f6:7a:34:90'
         self.ip = '10.50.0.100'
@@ -147,8 +148,8 @@ class Switch13(app_manager.RyuApp):
         #     datapath = Visualization_datapath.insert(object_datapath=dp)
         #     datapath.execute()
         
-        # cmd = "curl -X PUT -d 'tcp:10.50.0.100' http://10.50.0.100:8080/v1.0/conf/switches/" + datapath[0].datapath + "/ovsdb_addr"
-        # subprocess.call(cmd, shell=True)
+        cmd = "curl -X PUT -d 'tcp:10.50.0.100' http://10.50.0.100:8080/v1.0/conf/switches/" + datapath[0].datapath + "/ovsdb_addr"
+        subprocess.call(cmd, shell=True)
     
     def unregist(self, dp):
         dpid_str = dpid_lib.dpid_to_str(dp.id)
@@ -211,6 +212,7 @@ class Switch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         timestamp = time.time()
+        self.test_time = time.time()
         pkt = packet.Packet()
         pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr, dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
  
@@ -246,6 +248,9 @@ class Switch13(app_manager.RyuApp):
         pkt_lldp = pkt.get_protocol(lldp.lldp)
         if pkt_lldp:
             self.handle_lldp(datapath, port, pkt_lldp, timestamp)
+            time_test = time.time()
+            diff = time_test - self.test_time
+            print 'db_insert_time:', diff
 
     def handle_lldp(self, datapath, port, pkt_lldp, timestamp):
         timestamp_diff = timestamp - pkt_lldp.tlvs[3].timestamp
@@ -370,7 +375,9 @@ class Switch13(app_manager.RyuApp):
                         if p == ps:
                             i.append(ps)
 
+                host_name1 = Visualization_topologies.get(Visualization_topologies.dport1 == v.start)
+                host_name2 = Visualization_topologies.get(Visualization_topologies.dport1 == v.end)
                 if  len(i) < path_length:
-                    cmd = "curl -X GET http://10.50.0.100:8080/auto/" + v.start + "/" + v.end + "/" + str(v.vlanid)
+                    cmd = "curl -X GET http://10.50.0.100:8080/auto/" + host_name1.dport2 + "/" + host_name2.dport2 + "/" + str(v.vlanid)
                 
                     subprocess.call(cmd, shell=True)
