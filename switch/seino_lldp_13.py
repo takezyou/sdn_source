@@ -85,9 +85,10 @@ class Switch13(app_manager.RyuApp):
         # initialize mac address table.
         self.mac_to_port = {}
         self.datapaths = []
-        self.dport_id = []
+        self.valu = 30
         self.table = 0
         self.test_time = time.time()
+        self.zero = 0
         # self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"] 
         self.hw = '88:d7:f6:7a:34:90'
         self.ip = '10.50.0.100'
@@ -95,15 +96,17 @@ class Switch13(app_manager.RyuApp):
         self.ipv4_type=ether.ETH_TYPE_IP
         self.arp_type=ether.ETH_TYPE_ARP
         self.lldp_type=ether.ETH_TYPE_LLDP
-        self.lldp_thread = hub.spawn(self.lldp_loop)
+        # self.lldp_thread = hub.spawn(self.lldp_loop)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        self.datapaths.append(datapath)
-
+        
+        if len(self.datapaths) < self.valu :
+            self.datapaths.append(datapath)
+        
         match = parser.OFPMatch(eth_type=self.lldp_type)
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
         self.add_flow(datapath, 1, match, actions)
@@ -111,19 +114,25 @@ class Switch13(app_manager.RyuApp):
         # match = parser.OFPMatch(eth_type=self.lldp_type)
         # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,ofproto.OFPCML_NO_BUFFER)]
         # self.add_flow(datapath, 1, match, actions)
+        if self.zero < self.valu:
+            self.send_port_desc_stats_request(datapath)
+            self.zero += 1
+            print 'count:',self.zero
+        
 
-        self.send_port_desc_stats_request(datapath)
 
-    def lldp_loop(self):
-        while True:
-            self.connection()
-            # self.insert_host()
-            self.dport_id = []
-            datapaths = Visualization_datapath.select()
-            for dp in self.datapaths:
-                self.send_port_desc_stats_request(dp)
-                self.insert_route()
-            hub.sleep(20)
+    # def lldp_loop(self):
+    #     while True:
+    #         #  self.connection()
+    #         # self.insert_host()
+    #         # self.dport_id = []
+    #         c = 0
+    #         for dp in self.datapaths:
+    #             c += 1
+    #             self.send_port_desc_stats_request(dp)
+    #             self.insert_route()
+    #         print "count:", c 
+    #         hub.sleep(10)
 
     @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
     def handler_datapath(self, ev):
@@ -144,9 +153,10 @@ class Switch13(app_manager.RyuApp):
         if not datapath.exists():
             datapath = Visualization_datapath.insert(datapath=dpid_str,object_datapath=dp)
             datapath.execute()
-        datapath = Visualization_datapath.select().where(Visualization_datapath.datapath == dpid_str) 
-        cmd = """curl -X PUT -d '""' http://10.50.0.100:8080/v1.0/conf/switches/""" + datapath[0].datapath + "/ovsdb_addr"
-        subprocess.call(cmd, shell=True)
+        
+        # datapath = Visualization_datapath.select().where(Visualization_datapath.datapath == dpid_str) 
+        # cmd = """curl -X PUT -d '""' http://10.50.0.100:8080/v1.0/conf/switches/""" + datapath[0].datapath + "/ovsdb_addr"
+        # subprocess.call(cmd, shell=True)
     
     def unregist(self, dp):
         dpid_str = dpid_lib.dpid_to_str(dp.id)
@@ -209,7 +219,6 @@ class Switch13(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         timestamp = time.time()
-        # print "---------------------------start--------------------------------"
         pkt = packet.Packet()
         pkt.add_protocol(ethernet.ethernet(ethertype=self.lldp_type, src=hw_addr, dst=lldp.LLDP_MAC_NEAREST_BRIDGE))
  
@@ -245,9 +254,9 @@ class Switch13(app_manager.RyuApp):
         pkt_lldp = pkt.get_protocol(lldp.lldp)
         if pkt_lldp:
             self.handle_lldp(datapath, port, pkt_lldp, timestamp)
-            # time_test = time.time()
-            # diff = time_test - self.test_time
-            # print 'db_insert_time:', diff
+            time_test = time.time()
+            diff = time_test - self.test_time
+            print 'db_insert_time:', diff
 
     def handle_lldp(self, datapath, port, pkt_lldp, timestamp):
         timestamp_diff = timestamp - pkt_lldp.tlvs[3].timestamp
@@ -281,7 +290,7 @@ class Switch13(app_manager.RyuApp):
                 # db insert --->
             
         # <--- db delete
-        Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
+        # Visualization_topologies.delete().where((time.time() - Visualization_topologies.updated) > 20).execute()
         # ---> db delete
 
     # def switch_id(self):
