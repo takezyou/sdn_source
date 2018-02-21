@@ -426,8 +426,8 @@ class QoSController(ControllerBase):
         ofs = QoSController._OFS_LIST.get(dpid, None)
         if ofs is not None:
             # ofs.set_ovsdb_addr(dpid, value)
-            addres='tcp:10.50.0.100:6632'
-            ofs.set_ovsdb_addr(dpid,addres) 
+            address='tcp:10.50.0.101:6632'
+            ofs.set_ovsdb_addr(dpid, address) 
 
 
     @staticmethod
@@ -620,7 +620,6 @@ class QoS(object):
             if self.ovs_bridge:
                 self.ovs_bridge = None
             return
-
         ovs_bridge = bridge.OVSBridge(self.CONF, dpid, ovsdb_addr)
         try:
             ovs_bridge.init()

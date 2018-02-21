@@ -34,7 +34,7 @@ import peewee
 import MySQLdb
 
 
-db = peewee.MySQLDatabase("ryu_db", host="mat.ns.ie.u-ryukyu.ac.jp", port=3306, user="root", passwd="")
+db = peewee.MySQLDatabase("ryu_db", host="star.ns.ie.u-ryukyu.ac.jp", port=3306, user="root", passwd="ogwfASGM+38p")
 
 class Visualization_topologies(peewee.Model):
     id = peewee.IntegerField()
@@ -90,7 +90,7 @@ class Switch13(app_manager.RyuApp):
         self.test_time = time.time()
         # self.hostname = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"] 
         self.hw = '88:d7:f6:7a:34:90'
-        self.ip = '10.50.0.100'
+        self.ip = '10.50.0.101'
         self.vlan_type=ether.ETH_TYPE_8021Q
         self.ipv4_type=ether.ETH_TYPE_IP
         self.arp_type=ether.ETH_TYPE_ARP
@@ -144,8 +144,8 @@ class Switch13(app_manager.RyuApp):
         if not datapath.exists():
             datapath = Visualization_datapath.insert(datapath=dpid_str,object_datapath=dp)
             datapath.execute()
-        datapath = Visualization_datapath.select().where(Visualization_datapath.datapath == dpid_str) 
-        cmd = """curl -X PUT -d '""' http://10.50.0.100:8080/v1.0/conf/switches/""" + datapath[0].datapath + "/ovsdb_addr"
+        # datapath = Visualization_datapath.select().where(Visualization_datapath.datapath == dpid_str) 
+        cmd = """curl -X PUT -d '""' http://10.50.0.101:8080/v1.0/conf/switches/""" + datapath[0].datapath + "/ovsdb_addr"
         subprocess.call(cmd, shell=True)
     
     def unregist(self, dp):
@@ -375,6 +375,6 @@ class Switch13(app_manager.RyuApp):
                 host_name1 = Visualization_topologies.get(Visualization_topologies.dport1 == v.start)
                 host_name2 = Visualization_topologies.get(Visualization_topologies.dport1 == v.end)
                 if  len(i) < path_length:
-                    cmd = "curl -X GET http://10.50.0.100:8080/auto/" + host_name1.dport2 + "/" + host_name2.dport2 + "/" + str(v.vlanid)
+                    cmd = "curl -X GET http://10.50.0.101:8080/auto/" + host_name1.dport2 + "/" + host_name2.dport2 + "/" + str(v.vlanid)
                 
                     subprocess.call(cmd, shell=True)
